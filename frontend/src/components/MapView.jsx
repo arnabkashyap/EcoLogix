@@ -21,9 +21,16 @@ const createStopIcon = (number, isOptimized = true) =>
 function MapBoundsFitter({ points }) {
   const map = useMap();
   useEffect(() => {
-    if (points && points.length > 0) {
-      const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng]));
-      map.fitBounds(bounds, { padding: [40, 40] });
+    const validPoints = (points || []).filter(
+      (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number'
+    );
+    if (validPoints.length > 0) {
+      try {
+        const bounds = L.latLngBounds(validPoints.map((p) => [p.lat, p.lng]));
+        map.fitBounds(bounds, { padding: [40, 40] });
+      } catch (err) {
+        console.warn('Map bounds fit warning:', err);
+      }
     }
   }, [points, map]);
   return null;
@@ -83,7 +90,7 @@ export function MapView({ routeResult, depot }) {
         />
 
         {/* Fit Map Bounds */}
-        <MapBoundsFitter points={optimizedStops.length > 0 ? optimizedStops : [depot]} />
+        <MapBoundsFitter points={optimizedStops.length > 0 ? optimizedStops : (depot ? [depot] : [])} />
 
         {/* Baseline Path (Dashed Rose Red) */}
         {basePolyline.length > 1 && (

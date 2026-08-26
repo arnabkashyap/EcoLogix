@@ -85,3 +85,17 @@ def test_load_pool_matching():
     assert match["co2_saved_kg"] > 0
     assert "cost_saved_usd" in match
     assert match["data_boundary_proof"]["is_data_isolated"] is True
+
+
+def test_impact_summary():
+    token_a = client.post("/api/v1/dev-login", json={"company": "A"}).json()["access_token"]
+    headers_a = {"Authorization": f"Bearer {token_a}"}
+
+    res = client.get("/api/v1/impact/summary", headers=headers_a)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["tenant_id"] == "tenant-northwind"
+    assert "combined_total_co2_saved_kg" in data
+    assert "equivalent_trees_planted" in data
+    assert data["combined_total_co2_saved_kg"] >= 0
+

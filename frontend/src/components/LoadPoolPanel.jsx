@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../services/api';
 import { Layers, ShieldCheck, RefreshCw, ArrowRight, DollarSign, Leaf, Lock } from 'lucide-react';
 
-export function LoadPoolPanel() {
+export function LoadPoolPanel({ onMatchTriggered }) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [requestingCompany, setRequestingCompany] = useState('');
@@ -15,6 +15,9 @@ export function LoadPoolPanel() {
       setMatches(res.matches || []);
       setRequestingCompany(res.requesting_company);
       setHasRun(true);
+      if (onMatchTriggered) {
+        onMatchTriggered();
+      }
     } catch (err) {
       console.error('Load pool match error:', err);
     } finally {

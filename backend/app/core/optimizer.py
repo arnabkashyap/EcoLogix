@@ -1,7 +1,8 @@
 """
 EcoLogix Route Optimizer & Pareto Frontier Generator
 
-Uses multi-objective Vehicle Routing Problem (VRP) solving with Google OR-Tools / exact combinatorial search.
+Uses multi-objective Vehicle Routing Problem (VRP) solving with an exact combinatorial solver
+(optimal for ≤9 stops), or a greedy nearest-neighbor heuristic fallback above that.
 Wired directly to the pure shared Emissions Model (`backend/app/core/emissions.py`).
 """
 
@@ -9,6 +10,52 @@ import math
 import itertools
 from typing import List, Dict, Any, Tuple
 from backend.app.core.emissions import calculate_segment_emissions, VEHICLE_PROFILES
+
+
+# MOCK DATA for demo purposes, not a real risk feed
+MOCK_CLIMATE_RISK_CORRIDORS = [
+    {
+        "name": "Green River Valley Lowland",
+        "lat_min": 47.30,
+        "lat_max": 47.45,
+        "lng_min": -122.30,
+        "lng_max": -122.18,
+        "note": "Corridor has elevated flood risk in wet season",
+    },
+    {
+        "name": "Snoqualmie Foothills Pass",
+        "lat_min": 47.45,
+        "lat_max": 47.65,
+        "lng_min": -122.10,
+        "lng_max": -121.80,
+        "note": "Wildfire smoke hazard corridor - seasonal visibility advisory",
+    },
+    {
+        "name": "Tacoma Tideflats Industrial Dock",
+        "lat_min": 47.24,
+        "lat_max": 47.28,
+        "lng_min": -122.43,
+        "lng_max": -122.39,
+        "note": "Tideflats coastal inundation & storm surge risk corridor",
+    },
+]
+
+
+def check_climate_risk(from_lat: float, from_lng: float, to_lat: float, to_lng: float) -> Tuple[bool, str]:
+    """
+    Checks if a leg's endpoints or midpoint intersect mock climate risk corridors.
+    Returns (climate_risk_flag, climate_risk_note).
+    """
+    points = [
+        (from_lat, from_lng),
+        (to_lat, to_lng),
+        ((from_lat + to_lat) / 2.0, (from_lng + to_lng) / 2.0),
+    ]
+    for corridor in MOCK_CLIMATE_RISK_CORRIDORS:
+        for lat, lng in points:
+            if (corridor["lat_min"] <= lat <= corridor["lat_max"]) and (corridor["lng_min"] <= lng <= corridor["lng_max"]):
+                return True, corridor["note"]
+    return False, ""
 
 
 def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -111,6 +158,7 @@ def optimize_route_vrp(
     if n <= 1:
         return {
             "alpha": alpha,
+            "solution_method": "exact_optimal",
             "ordered_stops": all_stops,
             "total_distance_km": 0.0,
             "total_time_min": 0.0,
@@ -118,25 +166,19 @@ def optimize_route_vrp(
             "baseline_co2_kg": 0.0,
             "co2_saved_pct": 0.0,
             "pareto_points": [],
+            "legs": [],
         }
 
     dist_matrix, time_matrix, co2_matrix = build_cost_matrices(all_stops, vehicle_type)
 
-    # 1. Try OR-Tools routing if available, or fast exact permutation for n <= 10
     stop_indices = list(range(1, n))
-
-    # Evaluate baseline route (alpha = 1.0, purely minimizing time)
-    best_time_seq = None
-    min_time_cost = float("inf")
-
-    # Evaluate greenest route (alpha = 0.0, purely minimizing CO2)
-    # And alpha-weighted route
     alpha_steps = [0.0, 0.25, 0.5, 0.75, 1.0]
     pareto_points = []
     best_seqs_by_alpha = {}
 
-    # For hackathon demo dataset size (n <= 8), exact permutation sweep guarantees 100% optimal Pareto curve
+    # Exact combinatorial solver for stop counts <= 9, nearest-neighbor heuristic fallback above that
     if n <= 9:
+        solution_method = "exact_optimal"
         for perm in itertools.permutations(stop_indices):
             seq = [0] + list(perm) + [0]
             metrics = evaluate_route_sequence(seq, dist_matrix, time_matrix, co2_matrix)
@@ -153,7 +195,7 @@ def optimize_route_vrp(
                     }
 
     else:
-        # Nearest neighbor heuristic fallback for larger stop counts
+        solution_method = "heuristic_nearest_neighbor"
         curr = 0
         unvisited = set(stop_indices)
         seq = [0]
@@ -181,11 +223,9 @@ def optimize_route_vrp(
     selected_metrics = selected_alpha_entry["metrics"]
 
     # Build Pareto frontier curve points
-    seen_points = set()
     for a in sorted(alpha_steps):
         entry = best_seqs_by_alpha[a]
         m = entry["metrics"]
-        key = (m["total_time_min"], m["total_co2_kg"])
         c_saved = round(
             max(0.0, ((baseline_co2 - m["total_co2_kg"]) / baseline_co2) * 100.0), 1
         ) if baseline_co2 > 0 else 0.0
@@ -216,7 +256,7 @@ def optimize_route_vrp(
         s = all_stops[idx].copy()
         baseline_stops.append(s)
 
-    # Leg details for map rendering
+    # Leg details for map rendering & climate risk checking
     legs = []
     for i in range(len(selected_seq) - 1):
         u, v = selected_seq[i], selected_seq[i + 1]
@@ -224,6 +264,7 @@ def optimize_route_vrp(
         d = dist_matrix[u][v]
         t = time_matrix[u][v]
         c = co2_matrix[u][v]
+        is_flagged, risk_note = check_climate_risk(su["lat"], su["lng"], sv["lat"], sv["lng"])
         legs.append(
             {
                 "sequence_order": i + 1,
@@ -236,11 +277,14 @@ def optimize_route_vrp(
                 "distance_km": d,
                 "time_min": t,
                 "co2_kg": c,
+                "climate_risk_flag": is_flagged,
+                "climate_risk_note": risk_note,
             }
         )
 
     return {
         "alpha": alpha,
+        "solution_method": solution_method,
         "total_distance_km": selected_metrics["total_distance_km"],
         "total_time_min": selected_metrics["total_time_min"],
         "total_co2_kg": selected_metrics["total_co2_kg"],
@@ -252,3 +296,4 @@ def optimize_route_vrp(
         "legs": legs,
         "pareto_points": pareto_points,
     }
+

@@ -99,15 +99,16 @@ A dashboard ties it together: map view of baseline vs. optimized routes, a trade
                      └──────────┬──────────┘
                                 │ REST/JSON
                      ┌──────────▼──────────┐
+                     ┌──────────▼──────────┘
                      │     API Gateway       │
                      │     (FastAPI)         │
                      └──────────┬──────────┘
            ┌────────────────────┼────────────────────┐
            │                    │                     │
  ┌─────────▼────────┐ ┌─────────▼─────────┐ ┌─────────▼─────────┐
- │ Emissions Model   │ │ Route Optimizer    │ │ Load-Pooling Engine│
- │ (fuel/CO2 calc)   │ │ (OR-Tools VRP +    │ │ (bipartite match   │
- │                   │ │  Pareto sweep)     │ │  on empty legs)    │
+  │ Emissions Model   │ │ Route Optimizer    │ │ Load-Pooling Engine│
+  │ (fuel/CO2 calc)   │ │ (Exact VRP +       │ │ (bipartite match   │
+  │                   │ │  Pareto sweep)     │ │  on empty legs)    │
  └─────────┬────────┘ └─────────┬─────────┘ └─────────┬─────────┘
            │                    │                     │
            └────────────────────┼─────────────────────┘
@@ -151,7 +152,7 @@ co2_kg = distance_km × kwh_per_km × grid_emission_factor_kg_per_kwh
 1. Build a distance/time matrix between all stops (OSRM or Maps Distance Matrix API; cache aggressively).
 2. Frame each candidate route's cost as a weighted objective:
    `cost = α × normalized_time + (1 − α) × normalized_co2`
-3. Solve the resulting VRP with Google OR-Tools' routing library for a range of `α` values (e.g., 0, 0.25, 0.5, 0.75, 1.0).
+3. Solve the resulting VRP with an exact combinatorial solver (optimal for ≤9 stops) or nearest-neighbor heuristic for a range of `α` values (e.g., 0, 0.25, 0.5, 0.75, 1.0).
 4. Plot the resulting (time, emissions) pairs — this is the Pareto frontier shown to the user, who picks a point instead of a single "optimal" answer.
 5. *(Stretch)* Replace the weighted-sum sweep with a proper multi-objective solver (e.g., NSGA-II via DEAP) for a smoother, non-linear frontier.
 
@@ -211,7 +212,7 @@ GET  /api/v1/fleet/{id}/telemetry
 |---|---|---|
 | Backend API | Python + FastAPI | Fast to build, async-friendly, great for a data/optimization-heavy backend |
 | Routing/distance | OSRM (self-hosted) or Maps Distance Matrix API | Free/open options exist; OSRM avoids API rate limits during demo |
-| Optimization | Google OR-Tools (VRP), `scipy` (Hungarian matching), optionally DEAP (NSGA-II) | Battle-tested, well-documented, Python-native |
+| Optimization | Exact combinatorial VRP solver / heuristic fallback, `scipy` (Hungarian matching), optionally DEAP (NSGA-II) | Battle-tested, well-documented, Python-native |
 | Database | PostgreSQL + PostGIS | Geospatial queries (proximity, buffers) needed for pooling matches |
 | Frontend | React + Mapbox GL / Leaflet + Recharts | Map visualization + Pareto frontier chart |
 | Mock data | Python generator scripts | Removes dependency on live carrier telemetry for the demo |
@@ -293,7 +294,7 @@ GET  /api/v1/fleet/{id}/telemetry
 |---|---|
 | 0–3 | Team setup, repo scaffolding, mock-data schema design, API contract agreement |
 | 3–9 | Emissions model + distance/time matrix integration (OSRM or Maps API) |
-| 9–16 | Route optimizer (OR-Tools VRP) + Pareto sweep across α values |
+| 9–16 | Route optimizer (exact combinatorial solver) + Pareto sweep across α values |
 | 16–22 | Load-pooling matching engine (bipartite/Hungarian) |
 | 22–28 | Frontend dashboard: map, baseline vs. optimized comparison, Pareto chart |
 | 28–32 | Integration pass — connect frontend to live API responses, fix seams |
@@ -309,7 +310,7 @@ GET  /api/v1/fleet/{id}/telemetry
 | Risk | Mitigation |
 |---|---|
 | Live traffic/maps API rate limits or outage during demo | Pre-cache all demo-route API responses; ship a fully offline fallback dataset |
-| VRP solver too slow or doesn't converge in time budget | Cap stops per demo scenario (~15–20); use OR-Tools' time-limited search with a "good enough" solution |
+| VRP solver too slow or doesn't converge in time budget | Cap stops per demo scenario (~15–20); use exact solver for ≤9 stops and heuristic fallback for larger counts |
 | Emissions formula looks arbitrary to judges | Keep formula visible/explainable in-UI; cite standard emission factors rather than inventing numbers |
 | Load-pooling has no real second provider's data | Simulate a second mock fleet/provider dataset — judges care about the mechanism, not live carrier partnerships |
 | Scope creep (multimodal, live APIs, marketplace) eats core build time | Treat Section 12's Must-haves as the only committed scope until they're done and demo-stable |

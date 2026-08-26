@@ -8,6 +8,8 @@ import { AlphaSlider } from './components/AlphaSlider';
 import { LoadPoolPanel } from './components/LoadPoolPanel';
 import { EmissionsExplainer } from './components/EmissionsExplainer';
 import { DemoGuideModal } from './components/DemoGuideModal';
+import { ImpactSummaryPanel } from './components/ImpactSummaryPanel';
+import { EVComparisonCard } from './components/EVComparisonCard';
 import {
   Truck,
   Package,
@@ -19,6 +21,7 @@ import {
   Zap,
   TrendingDown,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function App() {
@@ -34,9 +37,19 @@ export default function App() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeResult, setRouteResult] = useState(null);
   const [paretoPoints, setParetoPoints] = useState([]);
+  const [impactSummary, setImpactSummary] = useState(null);
 
   const [showExplainer, setShowExplainer] = useState(false);
   const [showDemoGuide, setShowDemoGuide] = useState(false);
+
+  const fetchImpactSummary = async () => {
+    try {
+      const summary = await api.getImpactSummary();
+      setImpactSummary(summary);
+    } catch (err) {
+      console.error('Failed to fetch impact summary:', err);
+    }
+  };
 
   // Load tenant domain data when active tenant changes
   useEffect(() => {
@@ -59,6 +72,8 @@ export default function App() {
         const shipList = shipRes.shipments || [];
         setShipments(shipList);
         setSelectedShipmentIds(shipList.map((s) => s.id));
+
+        fetchImpactSummary();
 
         // Auto trigger initial optimization
         if (vehList.length > 0 && shipList.length > 0) {
@@ -95,6 +110,7 @@ export default function App() {
       if (completedJob && completedJob.result) {
         setRouteResult(completedJob.result);
         setParetoPoints(completedJob.result.pareto_points || []);
+        fetchImpactSummary();
       }
     } catch (err) {
       console.error('Optimization failed:', err);
@@ -130,6 +146,9 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        {/* Cumulative ESG Impact Summary Headline Panel (Task 3) */}
+        <ImpactSummaryPanel impactSummary={impactSummary} />
+
         {/* Top Metric Highlight Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
@@ -296,6 +315,7 @@ export default function App() {
               paretoPoints={paretoPoints}
               currentAlpha={alpha}
               onSelectAlpha={handleAlphaChange}
+              solutionMethod={routeResult?.solution_method}
             />
           </div>
 
@@ -303,6 +323,9 @@ export default function App() {
           <div className="lg:col-span-8 space-y-6">
             {/* Interactive Leaflet Map */}
             <MapView routeResult={routeResult} depot={depot} />
+
+            {/* EV Fleet Electrification Scenario Card (Task 4) */}
+            <EVComparisonCard routeResult={routeResult} />
 
             {/* Route Sequence & Legs Table */}
             {routeResult && routeResult.legs && (
@@ -328,6 +351,7 @@ export default function App() {
                         <th className="px-3 py-2">Dist (km)</th>
                         <th className="px-3 py-2">Time (min)</th>
                         <th className="px-3 py-2">CO₂ (kg)</th>
+                        <th className="px-3 py-2">Climate Risk</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
@@ -343,6 +367,19 @@ export default function App() {
                           <td className="px-3 py-2 font-mono font-bold text-emerald-400">
                             {leg.co2_kg} kg
                           </td>
+                          <td className="px-3 py-2 font-mono">
+                            {leg.climate_risk_flag ? (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold cursor-help"
+                                title={leg.climate_risk_note}
+                              >
+                                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                                Flagged Risk
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-500">Normal</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -352,7 +389,7 @@ export default function App() {
             )}
 
             {/* Cross-Tenant Load Pooling Engine Section */}
-            <LoadPoolPanel />
+            <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
           </div>
         </div>
       </main>

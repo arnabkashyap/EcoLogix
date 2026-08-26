@@ -71,7 +71,7 @@ React Dashboard ──HTTPS/JWT──► FastAPI (single container)
               (in-process, sync) (managed)          (job queue + cache)
                                                         │
                                                   1 worker process (RQ)
-                                                  → Route Optimizer (OR-Tools, time-boxed)
+                                                  → Route Optimizer (exact combinatorial solver, time-boxed)
                                                   → calls Emissions Model
 ```
 
@@ -91,7 +91,7 @@ Four deployables: API container, worker container, managed Postgres, managed Red
 | 1:00–2:30 | Schema + migrations: `organizations`, `users`, `fleets`, `vehicles`, `shipments`, `routes`, `route_legs`, `emission_factors` — `tenant_id` on every domain table | Migrations run clean against local Postgres |
 | 2:30–3:30 | Mock auth: `/dev-login`, JWT signing/verification middleware | A curl request with a valid token resolves the right `tenant_id`; an invalid/missing token is rejected |
 | 3:30–5:00 | Emissions Model as a pure function (fuel/CO₂ per segment) — unit-test it now, it's the credibility anchor for the whole pitch | Given a vehicle profile + distance + load, returns a CO₂ figure; 3–4 unit tests pass |
-| 5:00–7:00 | Route Optimizer: OR-Tools VRP, α-weighted objective, wired to Emissions Model, wrapped as an RQ job with a hard time limit (10–15s) | `POST /routes/optimize` returns a `job_id`; worker produces a route + `co2_kg` + `solution_quality` within the time limit |
+| 5:00–7:00 | Route Optimizer: exact combinatorial solver (optimal for ≤9 stops) / greedy nearest-neighbor heuristic fallback, α-weighted objective, wired to Emissions Model, wrapped as an RQ job with a hard time limit (10–15s) | `POST /routes/optimize` returns a `job_id`; worker produces a route + `co2_kg` + `solution_quality` within the time limit |
 | 7:00–8:00 | `GET /jobs/{id}` polling endpoint; seed script with 2 demo companies, sample fleets/shipments | Can optimize a route end-to-end via curl/Postman for two different tenants and see isolated results |
 
 **Day 1 exit bar:** if only curl/Postman work by end of day, that's fine — the algorithm and tenant isolation must be provably correct before any pixel is drawn.
@@ -137,7 +137,7 @@ This answer is the difference between "toy demo" and "team that understands prod
 
 | Likely criterion | What to point to |
 |---|---|
-| **Technical difficulty** | Real VRP solve (OR-Tools) with a genuine multi-objective tradeoff, not a static demo; async job architecture; provable multi-tenant isolation |
+| **Technical difficulty** | Real VRP solve (exact combinatorial solver / heuristic fallback) with a genuine multi-objective tradeoff, not a static demo; async job architecture; provable multi-tenant isolation |
 | **Working product** | Deployed URL, both demo flows work live, no "imagine if this worked" hand-waving |
 | **Problem/market fit** | CO₂ reduction *and* cost reduction in the same feature (load pooling) — appeals to both sustainability and ROI judges |
 | **Design/UX** | Map + live Pareto chart + slider is inherently visual and easy for a non-technical judge to grasp in seconds |

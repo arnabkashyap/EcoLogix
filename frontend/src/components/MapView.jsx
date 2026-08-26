@@ -18,6 +18,13 @@ const createStopIcon = (number, isOptimized = true) =>
     iconAnchor: [12, 12],
   });
 
+const riskWarningIcon = L.divIcon({
+  className: 'custom-risk-icon',
+  html: `<div style="background: #f59e0b; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 12px rgba(245, 158, 11, 0.9); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000000; font-size: 13px;">⚠️</div>`,
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+});
+
 function MapBoundsFitter({ points }) {
   const map = useMap();
   useEffect(() => {
@@ -45,11 +52,13 @@ export function MapView({ routeResult, depot }) {
   const optPolyline = optimizedStops.map((s) => [s.lat, s.lng]);
   const basePolyline = baselineStops.map((s) => [s.lat, s.lng]);
 
+  const hasRiskFlag = routeResult?.legs?.some((l) => l.climate_risk_flag);
+
   return (
     <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
       {/* Floating Map Legend & CO2 Saved Badge */}
       <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
-        <div className="glass-panel px-3.5 py-2 rounded-xl text-xs flex items-center gap-3">
+        <div className="glass-panel px-3.5 py-2 rounded-xl text-xs flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-1 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
             <span className="font-semibold text-slate-200">EcoLogix Route</span>
@@ -58,6 +67,11 @@ export function MapView({ routeResult, depot }) {
             <span className="w-4 h-1 bg-rose-500/80 rounded-full border-b border-dashed border-rose-300"></span>
             <span className="text-slate-400">Baseline (Time-only)</span>
           </div>
+          {hasRiskFlag && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+              <span>⚠️ Climate Risk Corridor Flagged</span>
+            </div>
+          )}
         </div>
 
         {routeResult && (
@@ -154,7 +168,38 @@ export function MapView({ routeResult, depot }) {
             </Marker>
           );
         })}
+
+        {/* Climate Risk Markers on Flagged Legs */}
+        {routeResult?.legs?.filter((leg) => leg.climate_risk_flag).map((leg, idx) => {
+          const midLat = (leg.from_lat + leg.to_lat) / 2.0;
+          const midLng = (leg.from_lng + leg.to_lng) / 2.0;
+          return (
+            <Marker
+              key={`risk-leg-${idx}`}
+              position={[midLat, midLng]}
+              icon={riskWarningIcon}
+            >
+              <Popup>
+                <div className="p-1.5 text-slate-900 text-xs max-w-xs">
+                  <div className="font-bold text-amber-700 flex items-center gap-1 mb-1">
+                    ⚠️ Climate-Risk Exposure Warning
+                  </div>
+                  <div className="font-semibold text-slate-800">
+                    Leg #{leg.sequence_order}: {leg.from_stop} → {leg.to_stop}
+                  </div>
+                  <div className="text-slate-700 mt-1 p-1 bg-amber-50 rounded border border-amber-200">
+                    {leg.climate_risk_note}
+                  </div>
+                  <div className="text-[9px] text-slate-500 mt-1 font-mono italic">
+                    Illustrative Risk Flag (Demo)
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );
 }
+

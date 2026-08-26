@@ -12,7 +12,7 @@
 | # | Feature | What it does | Linked FR |
 |---|---|---|---|
 | M1 | Mock dataset ingestion | Load a self-contained set of vehicles, shipments, and delivery windows with zero live-API dependency | FR-1 |
-| M2 | Single-provider multi-stop route optimization | Given a vehicle list + shipment/stop list, compute an optimized route using a time-vs-CO₂ weighted objective (OR-Tools VRP) | FR-1, FR-4 |
+| M2 | Single-provider multi-stop route optimization | Given a vehicle list + shipment/stop list, compute an optimized route using a time-vs-CO₂ weighted objective (exact combinatorial solver / heuristic fallback) | FR-1, FR-4 |
 | M3 | Emissions calculator | Compute estimated fuel (L) and CO₂ (kg) per route segment, based on vehicle profile, load, and congestion | FR-2 |
 | M4 | Baseline vs. optimized comparison | Show a naive time-only route next to the emissions-optimized route with a quantified CO₂/time delta | FR-3 |
 | M5 | Map visualization | Render both routes on a map with visually distinguishable paths (e.g., color-coded baseline vs. optimized) | FR-6 |
@@ -53,7 +53,7 @@
 ### M2 — Route Optimization
 - Input: a set of vehicle IDs + shipment/stop IDs + an α weighting (0 = pure time, 1 = pure emissions).
 - Output: an ordered stop sequence per vehicle, with total distance, time, and CO₂.
-- Solved via Google OR-Tools' VRP routing library.
+- Solved via an exact combinatorial solver (optimal for ≤9 stops), or a greedy nearest-neighbor heuristic fallback above that.
 
 ### M3 — Emissions Calculator
 - Per-segment fuel/CO₂ estimate driven by vehicle type, distance, load factor, and congestion index (diesel formula), or distance × kWh/km × grid factor (EV formula).

@@ -82,4 +82,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  // Impact Summary
+  getImpactSummary: () => apiRequest('/impact/summary'),
 };

@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { TrendingDown, Zap, Leaf } from 'lucide-react';
 
-export function ParetoChart({ paretoPoints, currentAlpha, onSelectAlpha }) {
+export function ParetoChart({ paretoPoints, currentAlpha, onSelectAlpha, solutionMethod }) {
   if (!paretoPoints || paretoPoints.length === 0) {
     return null;
   }
@@ -44,11 +44,29 @@ export function ParetoChart({ paretoPoints, currentAlpha, onSelectAlpha }) {
 
   return (
     <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
-          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-            <TrendingDown className="w-4 h-4 text-emerald-400" /> Pareto Frontier (Time vs CO₂)
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
+              <TrendingDown className="w-4 h-4 text-emerald-400" /> Pareto Frontier (Time vs CO₂)
+            </h3>
+            {solutionMethod && (
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
+                  solutionMethod === 'exact_optimal'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                }`}
+                title={
+                  solutionMethod === 'exact_optimal'
+                    ? 'Exact combinatorial search (optimal for ≤9 stops)'
+                    : 'Greedy nearest-neighbor heuristic'
+                }
+              >
+                {solutionMethod === 'exact_optimal' ? 'Exact Optimal' : 'Heuristic'}
+              </span>
+            )}
+          </div>
           <p className="text-[11px] text-slate-400">
             Interactive trade-off curve across α ∈ [0, 1]
           </p>

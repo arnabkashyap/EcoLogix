@@ -5,7 +5,12 @@ Database Setup using SQLAlchemy with SQLite engine for zero-dependency local exe
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./ecologix.db"
+import os
+
+if os.environ.get("VERCEL"):
+    SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/ecologix.db"
+else:
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./ecologix.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import { Search, MapPin, Navigation, Crosshair } from 'lucide-react';
 
 // Custom Leaflet Icons
 const depotIcon = L.divIcon({
@@ -12,12 +13,12 @@ const depotIcon = L.divIcon({
 
 const userLocationIcon = L.divIcon({
   className: 'custom-user-location-icon',
-  html: `<div style="position: relative; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
-    <div style="position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-    <div style="width: 14px; height: 14px; border-radius: 50%; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 10px rgba(37, 99, 235, 0.9); z-index: 10;"></div>
+  html: `<div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
+    <div style="position: absolute; width: 26px; height: 26px; border-radius: 50%; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+    <div style="width: 16px; height: 16px; border-radius: 50%; background: #2563eb; border: 3px solid #ffffff; box-shadow: 0 0 12px rgba(37, 99, 235, 0.9); z-index: 10;"></div>
   </div>`,
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
 });
 
 const createStopIcon = (number, isOptimized = true) =>
@@ -63,44 +64,129 @@ function MapRecenter({ targetCoords }) {
   return null;
 }
 
+function MapClickHandler({ onLocationSelect }) {
+  useMapEvents({
+    click(e) {
+      if (onLocationSelect) {
+        onLocationSelect({
+          lat: e.latlng.lat,
+          lng: e.latlng.lng,
+          source: 'clicked',
+        });
+      }
+    },
+  });
+  return null;
+}
+
 export function MapView({ routeResult, depot }) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   const fetchUserLocation = (shouldRecenter = true) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          const loc = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy),
+            source: 'gps',
+          };
           setUserLocation(loc);
           if (shouldRecenter) {
             setRecenterCoords([loc.lat, loc.lng]);
           }
         },
         (err) => console.warn('Geolocation unavailable or denied:', err.message),
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     }
   };
 
   useEffect(() => {
     if (navigator.geolocation) {
-      // 1. Fetch location immediately on mount & center map on user
       fetchUserLocation(true);
 
-      // 2. Watch location for live position updates
       const watchId = navigator.geolocation.watchPosition(
         (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserLocation(loc);
+          setUserLocation((prev) => {
+            if (prev && (prev.source === 'search' || prev.source === 'clicked' || prev.source === 'dragged')) {
+              return prev;
+            }
+            return {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              accuracy: Math.round(pos.coords.accuracy),
+              source: 'gps',
+            };
+          });
         },
         (err) => console.warn('Geolocation watch error:', err.message),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
 
       return () => navigator.geolocation.clearWatch(watchId);
     }
   }, []);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchError('');
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const first = data[0];
+        const lat = parseFloat(first.lat);
+        const lng = parseFloat(first.lon);
+        const loc = {
+          lat,
+          lng,
+          name: first.display_name,
+          source: 'search',
+        };
+        setUserLocation(loc);
+        setRecenterCoords([lat, lng]);
+      } else {
+        setSearchError('Location not found. Try a city or street address.');
+      }
+    } catch (err) {
+      setSearchError('Search failed. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleManualSelect = (loc) => {
+    setUserLocation(loc);
+    setRecenterCoords([loc.lat, loc.lng]);
+  };
+
+  const markerEventHandlers = useMemo(
+    () => ({
+      dragend(e) {
+        const marker = e.target;
+        if (marker != null) {
+          const latLng = marker.getLatLng();
+          setUserLocation({
+            lat: latLng.lat,
+            lng: latLng.lng,
+            source: 'dragged',
+          });
+          setRecenterCoords([latLng.lat, latLng.lng]);
+        }
+      },
+    }),
+    []
+  );
 
   const center = userLocation
     ? [userLocation.lat, userLocation.lng]
@@ -118,9 +204,35 @@ export function MapView({ routeResult, depot }) {
 
   return (
     <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
-      {/* Floating Map Legend & CO2 Saved Badge */}
-      <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
-        <div className="glass-panel px-3.5 py-2 rounded-xl text-xs flex flex-wrap items-center gap-3">
+      {/* Floating Map Legend & Search Controls Overlay */}
+      <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
+        {/* Location Search Bar */}
+        <form onSubmit={handleSearch} className="flex items-center gap-1.5 glass-panel p-1.5 rounded-xl border border-slate-800 shadow-lg bg-slate-950/90">
+          <input
+            type="text"
+            placeholder="Type city or address to set exact location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-slate-900 text-xs text-slate-100 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-800 focus:outline-none focus:border-emerald-500 flex-1"
+          />
+          <button
+            type="submit"
+            disabled={isSearching}
+            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            <Search className="w-3.5 h-3.5" />
+            {isSearching ? '...' : 'Search'}
+          </button>
+        </form>
+
+        {searchError && (
+          <div className="text-[11px] text-rose-400 bg-slate-950/90 px-3 py-1 rounded-lg border border-rose-500/30">
+            {searchError}
+          </div>
+        )}
+
+        {/* Legend Panel & Recenter Buttons */}
+        <div className="glass-panel px-3.5 py-2 rounded-xl text-xs flex flex-wrap items-center gap-3 bg-slate-950/90">
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-1 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
             <span className="font-semibold text-slate-200">EcoLogix Route</span>
@@ -131,20 +243,40 @@ export function MapView({ routeResult, depot }) {
           </div>
           {hasRiskFlag && (
             <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
-              <span>⚠️ Climate Risk Corridor Flagged</span>
+              <span>⚠️ Climate Risk Corridor</span>
             </div>
           )}
           <button
             onClick={() => fetchUserLocation(true)}
             className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-            title="Center map on my current location"
+            title="Refetch fresh GPS location"
           >
-            <span>📍 Center on my location</span>
+            <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
+            <span>GPS Location</span>
           </button>
         </div>
 
+        {/* User Location Status Badge */}
+        {userLocation && (
+          <div className="glass-panel px-3 py-1.5 rounded-xl text-[11px] text-slate-300 flex items-center justify-between bg-slate-950/90 border border-emerald-500/30">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>
+                {userLocation.name
+                  ? userLocation.name.split(',')[0]
+                  : userLocation.source === 'gps'
+                    ? `Live GPS (${userLocation.accuracy ? `±${userLocation.accuracy}m` : 'active'})`
+                    : userLocation.source === 'search'
+                      ? 'Searched Position'
+                      : 'Pinned Position'}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400 italic">Drag marker or click map to adjust</span>
+          </div>
+        )}
+
         {routeResult && (
-          <div className="glass-panel-glow px-4 py-2 rounded-xl flex items-center gap-3">
+          <div className="glass-panel-glow px-4 py-2 rounded-xl flex items-center gap-3 bg-slate-950/90">
             <div className="text-emerald-400 font-extrabold text-lg leading-none">
               -{routeResult.co2_saved_pct}%
             </div>
@@ -172,18 +304,32 @@ export function MapView({ routeResult, depot }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Dynamic Recenter on User Location */}
+        {/* Dynamic Recenter */}
         <MapRecenter targetCoords={recenterCoords} />
+
+        {/* Manual Map Click Selector */}
+        <MapClickHandler onLocationSelect={handleManualSelect} />
 
         {/* Fit Map Bounds to Route when Route Exists */}
         <MapBoundsFitter points={optimizedStops.length > 0 ? optimizedStops : []} />
 
-        {/* User Location Marker */}
+        {/* User Location Marker (Draggable) */}
         {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={userLocationIcon}
+            draggable={true}
+            eventHandlers={markerEventHandlers}
+          >
             <Popup>
               <div className="p-1 text-slate-900 font-semibold text-xs">
-                📍 Your current location
+                <div>📍 Your selected location</div>
+                <div className="text-[10px] text-slate-600 font-mono mt-0.5">
+                  Lat: {userLocation.lat.toFixed(4)}, Lng: {userLocation.lng.toFixed(4)}
+                </div>
+                <div className="text-[9px] text-slate-500 mt-1 italic">
+                  Drag pin or click map to move
+                </div>
               </div>
             </Popup>
           </Marker>

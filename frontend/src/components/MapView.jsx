@@ -10,6 +10,16 @@ const depotIcon = L.divIcon({
   iconAnchor: [14, 14],
 });
 
+const userLocationIcon = L.divIcon({
+  className: 'custom-user-location-icon',
+  html: `<div style="position: relative; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+    <div style="position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+    <div style="width: 14px; height: 14px; border-radius: 50%; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 10px rgba(37, 99, 235, 0.9); z-index: 10;"></div>
+  </div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
 const createStopIcon = (number, isOptimized = true) =>
   L.divIcon({
     className: 'custom-stop-icon',
@@ -43,8 +53,45 @@ function MapBoundsFitter({ points }) {
   return null;
 }
 
+function MapRecenter({ targetCoords }) {
+  const map = useMap();
+  useEffect(() => {
+    if (targetCoords) {
+      map.flyTo(targetCoords, 13, { duration: 1.2 });
+    }
+  }, [targetCoords, map]);
+  return null;
+}
+
 export function MapView({ routeResult, depot }) {
-  const center = depot ? [depot.lat, depot.lng] : [47.5952, -122.3316];
+  const [userLocation, setUserLocation] = useState(null);
+  const [recenterCoords, setRecenterCoords] = useState(null);
+
+  const fetchUserLocation = (shouldRecenter = false) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          if (shouldRecenter) {
+            setRecenterCoords([loc.lat, loc.lng]);
+          }
+        },
+        (err) => console.warn('Geolocation unavailable or denied:', err.message),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchUserLocation(false);
+  }, []);
+
+  const center = userLocation
+    ? [userLocation.lat, userLocation.lng]
+    : depot
+      ? [depot.lat, depot.lng]
+      : [47.5952, -122.3316];
 
   const optimizedStops = routeResult?.ordered_stops || [];
   const baselineStops = routeResult?.baseline_stops || [];
@@ -72,6 +119,13 @@ export function MapView({ routeResult, depot }) {
               <span>⚠️ Climate Risk Corridor Flagged</span>
             </div>
           )}
+          <button
+            onClick={() => fetchUserLocation(true)}
+            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+            title="Center map on my current location"
+          >
+            <span>📍 Center on my location</span>
+          </button>
         </div>
 
         {routeResult && (
@@ -103,8 +157,30 @@ export function MapView({ routeResult, depot }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Fit Map Bounds */}
-        <MapBoundsFitter points={optimizedStops.length > 0 ? optimizedStops : (depot ? [depot] : [])} />
+        {/* Dynamic Recenter on User Location Click */}
+        <MapRecenter targetCoords={recenterCoords} />
+
+        {/* Fit Map Bounds to Route when Route Exists */}
+        <MapBoundsFitter
+          points={
+            optimizedStops.length > 0
+              ? optimizedStops
+              : !userLocation && depot
+                ? [depot]
+                : []
+          }
+        />
+
+        {/* User Location Marker */}
+        {userLocation && (
+          <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
+            <Popup>
+              <div className="p-1 text-slate-900 font-semibold text-xs">
+                📍 Your current location
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
         {/* Baseline Path (Dashed Rose Red) */}
         {basePolyline.length > 1 && (

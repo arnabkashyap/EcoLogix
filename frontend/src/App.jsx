@@ -10,6 +10,7 @@ import { EmissionsExplainer } from './components/EmissionsExplainer';
 import { DemoGuideModal } from './components/DemoGuideModal';
 import { ImpactSummaryPanel } from './components/ImpactSummaryPanel';
 import { EVComparisonCard } from './components/EVComparisonCard';
+import { WalkthroughTooltip } from './components/WalkthroughTooltip';
 import {
   Truck,
   Package,
@@ -41,6 +42,7 @@ export default function App() {
 
   const [showExplainer, setShowExplainer] = useState(false);
   const [showDemoGuide, setShowDemoGuide] = useState(false);
+  const [walkthroughStep, setWalkthroughStep] = useState(0);
 
   const fetchImpactSummary = async () => {
     try {
@@ -139,6 +141,10 @@ export default function App() {
     }
   };
 
+  const co2SavedKg = routeResult
+    ? Math.max(0, (routeResult.baseline_co2_kg || 0) - (routeResult.total_co2_kg || 0))
+    : 0;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Header Navigation */}
@@ -146,6 +152,21 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        {/* Top Plain-Language Headline Banner (Req #2) */}
+        <div className="glass-panel p-5 md:p-6 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/50 via-slate-900/90 to-slate-950/90 shadow-xl">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-100 tracking-tight leading-snug">
+            This route saves{' '}
+            <span className="text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+              {routeResult ? `${routeResult.co2_saved_pct}%` : '0%'} CO₂
+            </span>{' '}
+            and uses{' '}
+            <span className="text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+              {routeResult ? `${routeResult.total_distance_km}` : '--'} km
+            </span>{' '}
+            compared to the normal fastest route.
+          </h2>
+        </div>
+
         {/* Cumulative ESG Impact Summary Headline Panel (Task 3) */}
         <ImpactSummaryPanel impactSummary={impactSummary} />
 
@@ -180,6 +201,10 @@ export default function App() {
               <div className="text-[10px] text-slate-500 mt-0.5">
                 Baseline: {routeResult ? `${routeResult.baseline_co2_kg} kg` : '--'}
               </div>
+              {/* Relatable Equivalent Subtext (Req #3) */}
+              <div className="text-[10px] text-emerald-400/90 font-medium mt-1 flex items-center gap-1">
+                <span>≈ {co2SavedKg > 0 ? (co2SavedKg / 21).toFixed(1) : '0'} trees planted (est.)</span>
+              </div>
             </div>
             <button
               onClick={() => setShowExplainer(true)}
@@ -193,7 +218,7 @@ export default function App() {
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Estimated Transit Time
+                Estimated Transportation Time
               </div>
               <div className="text-2xl font-black text-amber-400 flex items-center gap-1 mt-0.5">
                 <Clock className="w-5 h-5" />
@@ -408,7 +433,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Modals */}
+      {/* Modals & Walkthrough */}
       <EmissionsExplainer
         isOpen={showExplainer}
         onClose={() => setShowExplainer(false)}
@@ -417,6 +442,12 @@ export default function App() {
       <DemoGuideModal
         isOpen={showDemoGuide}
         onClose={() => setShowDemoGuide(false)}
+      />
+      <WalkthroughTooltip
+        step={walkthroughStep}
+        onNext={() => setWalkthroughStep((prev) => prev + 1)}
+        onPrev={() => setWalkthroughStep((prev) => prev - 1)}
+        onDismiss={() => setWalkthroughStep(-1)}
       />
     </div>
   );

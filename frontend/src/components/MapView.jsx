@@ -56,7 +56,7 @@ function MapBoundsFitter({ points }) {
 function MapRecenter({ targetCoords }) {
   const map = useMap();
   useEffect(() => {
-    if (targetCoords) {
+    if (targetCoords && targetCoords.length === 2) {
       map.flyTo(targetCoords, 13, { duration: 1.2 });
     }
   }, [targetCoords, map]);
@@ -67,7 +67,7 @@ export function MapView({ routeResult, depot }) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
 
-  const fetchUserLocation = (shouldRecenter = false) => {
+  const fetchUserLocation = (shouldRecenter = true) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -84,7 +84,22 @@ export function MapView({ routeResult, depot }) {
   };
 
   useEffect(() => {
-    fetchUserLocation(false);
+    if (navigator.geolocation) {
+      // 1. Fetch location immediately on mount & center map on user
+      fetchUserLocation(true);
+
+      // 2. Watch location for live position updates
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+        },
+        (err) => console.warn('Geolocation watch error:', err.message),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+      );
+
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
   }, []);
 
   const center = userLocation
@@ -157,19 +172,11 @@ export function MapView({ routeResult, depot }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Dynamic Recenter on User Location Click */}
+        {/* Dynamic Recenter on User Location */}
         <MapRecenter targetCoords={recenterCoords} />
 
         {/* Fit Map Bounds to Route when Route Exists */}
-        <MapBoundsFitter
-          points={
-            optimizedStops.length > 0
-              ? optimizedStops
-              : !userLocation && depot
-                ? [depot]
-                : []
-          }
-        />
+        <MapBoundsFitter points={optimizedStops.length > 0 ? optimizedStops : []} />
 
         {/* User Location Marker */}
         {userLocation && (

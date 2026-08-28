@@ -61,14 +61,14 @@ export function DemoGuideModal({ isOpen, onClose }) {
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">5</div>
             <div>
               <div className="font-bold text-slate-200">Move the α Slider</div>
-              <div className="text-slate-400">Show the Pareto curve move live from <strong>Min CO₂ (α=0)</strong> to <strong>Min Time (α=1)</strong>.</div>
+              <div className="text-slate-400">Show the best route options curve move live from <strong>Min CO₂ (α=0)</strong> to <strong>Min Time (α=1)</strong>.</div>
             </div>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">6</div>
             <div>
-              <div className="font-bold text-slate-200">Trigger Cross-Company Load Pool Match</div>
+              <div className="font-bold text-slate-200">Trigger Cross-Company Combine Shipments Match</div>
               <div className="text-slate-400">Say: <em>"Northwind surfaces a matched empty leg from Apex Freight with CO₂/cost savings, but Apex's internal business remains private."</em></div>
             </div>
           </div>

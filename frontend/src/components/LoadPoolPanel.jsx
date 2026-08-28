@@ -31,10 +31,10 @@ export function LoadPoolPanel({ onMatchTriggered }) {
         <div>
           <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
             <Layers className="w-5 h-5 text-emerald-400" />
-            Shared Return Trips
+            Find a Return Shipment
           </h3>
           <p className="text-xs text-slate-400">
-            Cross-Company Load Pool Engine — Find empty return legs from other carriers to haul your shipments for free CO₂ & cost.
+            Cross-Company Combine Shipments Engine — Find empty return legs from other transport companies to haul your shipments for free CO₂ & cost.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export function LoadPoolPanel({ onMatchTriggered }) {
 
             {/* Proof Tagline */}
             <div className="text-[10px] text-slate-400 border-t border-slate-800/80 pt-2 flex items-center justify-between">
-              <span>Carrier: <strong className="text-slate-200">{match.carrier_b_name}</strong></span>
+              <span>Transport Company: <strong className="text-slate-200">{match.carrier_b_name}</strong></span>
               <span className="text-emerald-400 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Zero Extra Trucks
               </span>

@@ -18,10 +18,10 @@ export function WalkthroughTooltip({ step, onNext, onPrev, onDismiss }) {
         'Adjust the slider to prioritize maximum CO₂ reduction or fastest delivery time for your fleet.',
     },
     {
-      title: '3. Shared Return Trips',
-      target: 'Load Pooling Panel',
+      title: '3. Find a Return Shipment',
+      target: 'Combine Shipments Panel',
       description:
-        'Find empty return legs from partner carriers to haul shipments with zero extra trucks and 100% data privacy.',
+        'Find empty return legs from partner transport companies to haul shipments with zero extra trucks and 100% data privacy.',
     },
   ];
 

@@ -11,10 +11,10 @@ import {
 const NAV_ITEMS = [
   { id: 'impact-summary', label: 'Impact Summary', icon: BarChart3 },
   { id: 'route-optimizer', label: 'Route Optimizer', icon: Sliders },
-  { id: 'pareto-chart', label: 'Pareto Frontier', icon: TrendingDown },
+  { id: 'pareto-chart', label: 'Best Route Options', icon: TrendingDown },
   { id: 'map-view', label: 'Route Map', icon: MapPin },
   { id: 'ev-comparison', label: 'EV Comparison', icon: Zap },
-  { id: 'load-pool', label: 'Load Pooling', icon: Layers },
+  { id: 'load-pool', label: 'Combine Shipments', icon: Layers },
 ];
 
 export function NavBar() {

@@ -186,7 +186,7 @@ export default function App() {
           </h2>
         </div>
 
-        {/* Cumulative ESG Impact Summary Headline Panel (Task 3) */}
+        {/* Overall Sustainability Impact Headline Panel (Task 3) */}
         <div id="impact-summary" className="scroll-mt-28 md:scroll-mt-32">
           <ImpactSummaryPanel impactSummary={impactSummary} />
         </div>
@@ -356,7 +356,7 @@ export default function App() {
               isOptimizing={isOptimizing}
             />
 
-            {/* Pareto Frontier Chart */}
+            {/* Best Route Options Chart */}
             <div id="pareto-chart" className="scroll-mt-28 md:scroll-mt-32">
               <ParetoChart
                 paretoPoints={paretoPoints}
@@ -440,7 +440,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Cross-Tenant Load Pooling Engine Section */}
+            {/* Cross-Tenant Combine Shipments Engine Section */}
             <div id="load-pool" className="scroll-mt-28 md:scroll-mt-32">
               <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
             </div>

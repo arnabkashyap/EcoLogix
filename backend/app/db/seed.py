@@ -14,6 +14,11 @@ def seed_database():
     db = SessionLocal()
 
     try:
+        # Check if database is already seeded
+        existing = db.query(Organization).filter(Organization.id == "tenant-northwind").first()
+        if existing:
+            return
+
         # Clear existing tables to ensure idempotent fresh seed
         db.query(RouteLeg).delete()
         db.query(Route).delete()

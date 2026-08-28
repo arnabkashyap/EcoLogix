@@ -22,13 +22,13 @@ TENANT_CONFIG = {
         "tenant_id": "tenant-northwind",
         "company_name": "Northwind Logistics",
         "role": "Dispatcher",
-        "depot_city": "Seattle, WA",
+        "depot_city": "NCR Freight Hub, Delhi",
     },
     "B": {
         "tenant_id": "tenant-apex",
         "company_name": "Apex Freight",
         "role": "Operations Manager",
-        "depot_city": "Tacoma, WA",
+        "depot_city": "Mumbai Logistics Hub, MH",
     },
 }
 

@@ -66,12 +66,19 @@ export function NavBar() {
 
   // Scroll active tab into view horizontally inside mobile nav bar
   useEffect(() => {
-    if (activeTabRef.current) {
-      activeTabRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+    if (activeTabRef.current && typeof activeTabRef.current.scrollIntoView === 'function') {
+      try {
+        activeTabRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        });
+      } catch (err) {
+        // Fallback for older browsers
+        try {
+          activeTabRef.current.scrollIntoView(false);
+        } catch (e) {}
+      }
     }
   }, [activeSection]);
 

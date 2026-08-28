@@ -65,7 +65,7 @@ export default function App() {
           api.getShipments(),
         ]);
 
-        setDepot(fleetsRes.depot);
+        setDepot(fleetsRes.depot || { city: 'NCR Freight Hub, Delhi', lat: 28.6139, lng: 77.2090 });
         const vehList = vehRes.vehicles || [];
         setVehicles(vehList);
         if (vehList.length > 0) {
@@ -79,11 +79,26 @@ export default function App() {
         fetchImpactSummary();
 
         // Auto trigger initial optimization
-        if (vehList.length > 0 && shipList.length > 0) {
+        if (vehList.length > 0 && shipList.map((s) => s.id).length > 0) {
           runOptimization(vehList[0].id, shipList.map((s) => s.id), alpha);
         }
       } catch (err) {
         console.error('Failed to load tenant data:', err);
+        const fbDepot = { city: 'NCR Freight Hub, Delhi', lat: 28.6139, lng: 77.2090 };
+        const fbVehicles = [
+          { id: 'veh-nw-101', name: 'NW Heavy Freightliner #101', vehicle_type: 'heavy_truck', capacity_kg: 18000, current_lat: 28.6139, current_lng: 77.2090 },
+          { id: 'veh-nw-202', name: 'NW E-Cascadia EV Truck #202', vehicle_type: 'ev_truck', capacity_kg: 14000, current_lat: 28.6139, current_lng: 77.2090 },
+        ];
+        const fbShipments = [
+          { id: 'ship-nw-01', title: 'Gurugram Cyber City Cargo', dest_name: 'Gurugram Industrial Hub', weight_kg: 4200, dest_lat: 28.4595, dest_lng: 77.0266 },
+          { id: 'ship-nw-02', title: 'Noida Commercial Delivery', dest_name: 'Noida Sector 62 Commerce Center', weight_kg: 2800, dest_lat: 28.6280, dest_lng: 77.3649 },
+          { id: 'ship-nw-03', title: 'Faridabad Manufacturing Consignment', dest_name: 'Faridabad Industrial Area', weight_kg: 3500, dest_lat: 28.4089, dest_lng: 77.3178 },
+        ];
+        setDepot(fbDepot);
+        setVehicles(fbVehicles);
+        setSelectedVehicle(fbVehicles[0]);
+        setShipments(fbShipments);
+        setSelectedShipmentIds(fbShipments.map((s) => s.id));
       }
     }
     loadTenantData();

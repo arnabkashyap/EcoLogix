@@ -36,9 +36,10 @@ const riskWarningIcon = L.divIcon({
   iconAnchor: [13, 13],
 });
 
-function MapBoundsFitter({ points }) {
+function MapBoundsFitter({ points, shouldFit }) {
   const map = useMap();
   useEffect(() => {
+    if (!shouldFit) return;
     const validPoints = (points || []).filter(
       (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number'
     );
@@ -50,7 +51,7 @@ function MapBoundsFitter({ points }) {
         console.warn('Map bounds fit warning:', err);
       }
     }
-  }, [points, map]);
+  }, [points, shouldFit, map]);
   return null;
 }
 
@@ -85,6 +86,18 @@ export function MapView({ routeResult, depot }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+
+  const [hasUserRequestedRoute, setHasUserRequestedRoute] = useState(false);
+  const routeCountRef = useRef(0);
+
+  useEffect(() => {
+    if (routeResult) {
+      routeCountRef.current += 1;
+      if (routeCountRef.current > 1) {
+        setHasUserRequestedRoute(true);
+      }
+    }
+  }, [routeResult]);
 
   const fetchUserLocation = (shouldRecenter = true) => {
     if (navigator.geolocation) {
@@ -192,7 +205,7 @@ export function MapView({ routeResult, depot }) {
     ? [userLocation.lat, userLocation.lng]
     : depot
       ? [depot.lat, depot.lng]
-      : [47.5952, -122.3316];
+      : [28.6139, 77.2090];
 
   const optimizedStops = routeResult?.ordered_stops || [];
   const baselineStops = routeResult?.baseline_stops || [];
@@ -201,6 +214,16 @@ export function MapView({ routeResult, depot }) {
   const basePolyline = baselineStops.map((s) => [s.lat, s.lng]);
 
   const hasRiskFlag = routeResult?.legs?.some((l) => l.climate_risk_flag);
+
+  // Combine route stops with user location for bounds calculation when fitting
+  const boundsPoints = useMemo(() => {
+    if (!routeResult || optimizedStops.length === 0) return [];
+    const pts = [...optimizedStops];
+    if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
+      pts.push({ lat: userLocation.lat, lng: userLocation.lng });
+    }
+    return pts;
+  }, [routeResult, optimizedStops, userLocation]);
 
   return (
     <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
@@ -249,10 +272,10 @@ export function MapView({ routeResult, depot }) {
           <button
             onClick={() => fetchUserLocation(true)}
             className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-            title="Refetch fresh GPS location"
+            title="Recenter on my live location"
           >
             <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
-            <span>GPS Location</span>
+            <span>Recenter on my location</span>
           </button>
         </div>
 
@@ -310,8 +333,8 @@ export function MapView({ routeResult, depot }) {
         {/* Manual Map Click Selector */}
         <MapClickHandler onLocationSelect={handleManualSelect} />
 
-        {/* Fit Map Bounds to Route when Route Exists */}
-        <MapBoundsFitter points={optimizedStops.length > 0 ? optimizedStops : []} />
+        {/* Fit Map Bounds to Route & User Location when user explicitly requests/optimizes route */}
+        <MapBoundsFitter points={boundsPoints} shouldFit={hasUserRequestedRoute} />
 
         {/* User Location Marker (Draggable) */}
         {userLocation && (

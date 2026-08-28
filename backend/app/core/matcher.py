@@ -89,8 +89,8 @@ def find_load_pool_matches(
 
     # Build candidate corridors for requesting tenant (from shipment destination back to depot or shipment route)
     corridors = []
-    depot_lat = req_org.depot_lat if req_org else 47.5952
-    depot_lng = req_org.depot_lng if req_org else -122.3316
+    depot_lat = req_org.depot_lat if req_org else 28.6139
+    depot_lng = req_org.depot_lng if req_org else 77.2090
 
     for s_req in req_shipments:
         # Return leg corridor from delivery point back to requesting depot

@@ -36,8 +36,8 @@ def process_optimization_job(job_id: str):
         depot_stop = {
             "id": "depot",
             "title": f"{org.name if org else 'Company'} Depot",
-            "lat": org.depot_lat if org else 47.5952,
-            "lng": org.depot_lng if org else -122.3316,
+            "lat": org.depot_lat if org else 28.6139,
+            "lng": org.depot_lng if org else 77.2090,
             "stop_type": "depot",
             "load_kg": 0.0,
         }
@@ -140,8 +140,8 @@ def get_pareto_curve(
     depot_stop = {
         "id": "depot",
         "title": f"{org.name if org else 'Company'} Depot",
-        "lat": org.depot_lat if org else 47.5952,
-        "lng": org.depot_lng if org else -122.3316,
+        "lat": org.depot_lat if org else 28.6139,
+        "lng": org.depot_lng if org else 77.2090,
         "stop_type": "depot",
         "load_kg": 0.0,
     }

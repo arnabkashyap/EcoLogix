@@ -18,7 +18,6 @@ export function Header({ onOpenDemoGuide }) {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-100 tracking-tight">Eco<span className="text-emerald-400">Logix</span></h1>
-            <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">HACKATHON BUILD</span>
           </div>
           <p className="text-xs text-slate-400 font-medium hidden md:block">
             Multimodal Route & Carbon-Aware Logistics Engine

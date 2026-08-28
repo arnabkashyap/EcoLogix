@@ -10,6 +10,10 @@
   --accent-rose: #f43f5e;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: #030712;
@@ -17,6 +21,15 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+}
+
+/* Hide scrollbar for clean horizontal nav bar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .mono-font {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import { api } from './services/api';
 import { Header } from './components/Header';
+import { NavBar } from './components/NavBar';
 import { MapView } from './components/MapView';
 import { ParetoChart } from './components/ParetoChart';
 import { AlphaSlider } from './components/AlphaSlider';
@@ -150,6 +151,9 @@ export default function App() {
       {/* Header Navigation */}
       <Header onOpenDemoGuide={() => setShowDemoGuide(true)} />
 
+      {/* Sticky Sub-Navigation Bar */}
+      <NavBar />
+
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
         {/* Top Plain-Language Headline Banner (Req #2) */}
@@ -168,7 +172,9 @@ export default function App() {
         </div>
 
         {/* Cumulative ESG Impact Summary Headline Panel (Task 3) */}
-        <ImpactSummaryPanel impactSummary={impactSummary} />
+        <div id="impact-summary" className="scroll-mt-28 md:scroll-mt-32">
+          <ImpactSummaryPanel impactSummary={impactSummary} />
+        </div>
 
         {/* Top Metric Highlight Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -255,7 +261,7 @@ export default function App() {
         {/* Dashboard Core: Left Controls + Right Map & Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Fleet & Optimization Controls (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
+          <div id="route-optimizer" className="lg:col-span-4 space-y-6 scroll-mt-28 md:scroll-mt-32">
             {/* Vehicle Selection Card */}
             <div className="glass-panel p-4 rounded-2xl border border-slate-800">
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -336,21 +342,27 @@ export default function App() {
             />
 
             {/* Pareto Frontier Chart */}
-            <ParetoChart
-              paretoPoints={paretoPoints}
-              currentAlpha={alpha}
-              onSelectAlpha={handleAlphaChange}
-              solutionMethod={routeResult?.solution_method}
-            />
+            <div id="pareto-chart" className="scroll-mt-28 md:scroll-mt-32">
+              <ParetoChart
+                paretoPoints={paretoPoints}
+                currentAlpha={alpha}
+                onSelectAlpha={handleAlphaChange}
+                solutionMethod={routeResult?.solution_method}
+              />
+            </div>
           </div>
 
           {/* Right Column: Interactive Map & Route Summary (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
             {/* Interactive Leaflet Map */}
-            <MapView routeResult={routeResult} depot={depot} />
+            <div id="map-view" className="scroll-mt-28 md:scroll-mt-32">
+              <MapView routeResult={routeResult} depot={depot} />
+            </div>
 
             {/* EV Fleet Electrification Scenario Card (Task 4) */}
-            <EVComparisonCard routeResult={routeResult} />
+            <div id="ev-comparison" className="scroll-mt-28 md:scroll-mt-32">
+              <EVComparisonCard routeResult={routeResult} />
+            </div>
 
             {/* Route Sequence & Legs Table */}
             {routeResult && routeResult.legs && (
@@ -414,7 +426,9 @@ export default function App() {
             )}
 
             {/* Cross-Tenant Load Pooling Engine Section */}
-            <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
+            <div id="load-pool" className="scroll-mt-28 md:scroll-mt-32">
+              <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
+            </div>
           </div>
         </div>
       </main>

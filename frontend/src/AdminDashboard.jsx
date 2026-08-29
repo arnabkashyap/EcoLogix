@@ -4,7 +4,6 @@ import { api } from './services/api';
 import { Header } from './components/Header';
 import { NavBar } from './components/NavBar';
 import { MapView } from './components/MapView';
-import { ParetoChart } from './components/ParetoChart';
 import { AlphaSlider } from './components/AlphaSlider';
 import { LoadPoolPanel } from './components/LoadPoolPanel';
 import { EmissionsExplainer } from './components/EmissionsExplainer';
@@ -12,6 +11,13 @@ import { DemoGuideModal } from './components/DemoGuideModal';
 import { ImpactSummaryPanel } from './components/ImpactSummaryPanel';
 import { EVComparisonCard } from './components/EVComparisonCard';
 import { WalkthroughTooltip } from './components/WalkthroughTooltip';
+import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
+import {
+  staggerContainer,
+  staggerItem,
+  EASE_EMPHASIZED,
+  DURATION_STANDARD,
+} from './motion';
 import {
   Truck,
   Package,
@@ -87,16 +93,15 @@ export default function AdminDashboard() {
           runOptimization(vehList[0].id, shipList.map((s) => s.id), alpha);
         }
       } catch (err) {
-        console.error('Failed to load tenant data:', err);
-        const fbDepot = { city: 'Guwahati Hub', lat: 26.1445, lng: 91.7362 };
+        const fbDepot = { city: 'Betkuchi ISBT Freight Terminal', lat: 26.1214, lng: 91.7319 };
         const fbVehicles = [
-          { id: 'veh-nw-101', name: 'NW Heavy Freightliner #101', vehicle_type: 'heavy_truck', capacity_kg: 18000, current_lat: 28.6139, current_lng: 77.2090 },
-          { id: 'veh-nw-202', name: 'NW E-Cascadia EV Truck #202', vehicle_type: 'ev_truck', capacity_kg: 14000, current_lat: 28.6139, current_lng: 77.2090 },
+          { id: 'veh-nw-101', name: 'NW Tata Signa 4825.T Heavy Diesel #101', vehicle_type: 'heavy_truck', capacity_kg: 18000, current_lat: 26.1214, current_lng: 91.7319 },
+          { id: 'veh-nw-202', name: 'NW Freightliner E-Cascadia EV #202', vehicle_type: 'ev_truck', capacity_kg: 14000, current_lat: 26.1214, current_lng: 91.7319 },
         ];
         const fbShipments = [
-          { id: 'ship-nw-01', title: 'Gurugram Cyber City Cargo', dest_name: 'Gurugram Industrial Hub', weight_kg: 4200, dest_lat: 28.4595, dest_lng: 77.0266 },
-          { id: 'ship-nw-02', title: 'Noida Commercial Delivery', dest_name: 'Noida Sector 62 Commerce Center', weight_kg: 2800, dest_lat: 28.6280, dest_lng: 77.3649 },
-          { id: 'ship-nw-03', title: 'Faridabad Manufacturing Consignment', dest_name: 'Faridabad Industrial Area', weight_kg: 3500, dest_lat: 28.4089, dest_lng: 77.3178 },
+          { id: 'ship-nw-01', title: 'Amingaon Export Tea Consignment [Saraighat Corridor]', dest_name: 'ICD Amingaon Container Depot', weight_kg: 12500, dest_lat: 26.1852, dest_lng: 91.6811 },
+          { id: 'ship-nw-02', title: 'LGBI Cold Chain Vaccine Express', dest_name: 'LGBI Airport Cargo Terminal', weight_kg: 3600, dest_lat: 26.1061, dest_lng: 91.5859 },
+          { id: 'ship-nw-03', title: 'Bamunimaidam Industrial Raw Polymers', dest_name: 'Bamunimaidam Industrial Estate', weight_kg: 15200, dest_lat: 26.1884, dest_lng: 91.7821 },
         ];
         setDepot(fbDepot);
         setVehicles(fbVehicles);
@@ -175,6 +180,25 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleShuffleShipments = () => {
+    if (shipments.length === 0) return;
+    const count = Math.min(shipments.length, Math.floor(Math.random() * 4) + 5); // 5 to 8 stops
+    const shuffled = [...shipments].sort(() => 0.5 - Math.random());
+    const subsetIds = shuffled.slice(0, count).map((s) => s.id);
+    setSelectedShipmentIds(subsetIds);
+    if (selectedVehicle) {
+      runOptimization(selectedVehicle.id, subsetIds, alpha);
+    }
+  };
+
+  const handleSelectAllShipments = () => {
+    const allIds = shipments.map((s) => s.id);
+    setSelectedShipmentIds(allIds);
+    if (selectedVehicle) {
+      runOptimization(selectedVehicle.id, allIds, alpha);
+    }
+  };
+
   const co2SavedKg = routeResult
     ? Math.max(0, (routeResult.baseline_co2_kg || 0) - (routeResult.total_co2_kg || 0))
     : 0;
@@ -185,6 +209,9 @@ export default function AdminDashboard() {
       return {
         ...routeResult,
         ordered_stops: routeResult.baseline_stops || routeResult.ordered_stops,
+        legs: routeResult.baseline_legs || routeResult.legs,
+        total_co2_kg: routeResult.baseline_co2_kg || routeResult.total_co2_kg,
+        total_time_min: routeResult.baseline_time_min || routeResult.total_time_min,
       };
     }
     return routeResult;
@@ -203,37 +230,37 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-extrabold border border-emerald-500/30 flex items-center gap-1">
-                  <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Carbon-Aware Freight Optimization
+                  <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Greener Freight, Lower CO₂
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-100 tracking-tight leading-snug">
-                This route saves{' '}
+                This route cuts{' '}
                 <span className="text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
                   {routeResult ? `${routeResult.co2_saved_pct}%` : '0%'} CO₂
                 </span>{' '}
-                and uses{' '}
+                and travels only{' '}
                 <span className="text-emerald-300">
                   {routeResult ? `${routeResult.total_distance_km} km` : '--'}
                 </span>{' '}
-                compared to the standard route.
+                compared to the usual road.
               </h2>
             </div>
           </div>
         </div>
 
-        {/* Level 1 KPI Summary Cards */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-panel p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                CO₂ Reduction
+                CO₂ Cut
               </div>
               <div className="text-2xl md:text-3xl font-black text-emerald-400 flex items-center gap-1 mt-0.5">
                 <TrendingDown className="w-6 h-6 text-emerald-400" />
                 {routeResult ? `-${routeResult.co2_saved_pct}%` : '0%'}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5">
-                vs standard route
+                vs usual road
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
@@ -256,7 +283,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => setShowExplainer(true)}
               className="p-2 rounded-xl bg-[#111827] hover:bg-[#1F2937] text-slate-400 hover:text-emerald-400 border border-slate-800 transition-colors"
-              title="How we calculated emissions"
+              title="How we worked out the CO₂ figure"
             >
               <Calculator className="w-5 h-5" />
             </button>
@@ -272,7 +299,7 @@ export default function AdminDashboard() {
                 {routeResult ? `${routeResult.total_time_min} min` : '--'}
               </div>
               <div className="text-[10px] text-slate-400 mt-0.5">
-                Distance: {routeResult ? `${routeResult.total_distance_km} km` : '--'}
+                Road: {routeResult ? `${routeResult.total_distance_km} km` : '--'}
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -283,14 +310,14 @@ export default function AdminDashboard() {
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Empty Trip Opportunity
+                Empty Trip Saving
               </div>
               <div className="text-sm font-extrabold text-slate-100 mt-1 flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-emerald-400" />
-                Return Leg Matching
+                Share Return Load
               </div>
               <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">
-                Cross-Company Load Pooling
+                Pool Loads Across Companies
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
@@ -420,9 +447,29 @@ export default function AdminDashboard() {
 
               {/* Step 2: Select Shipments */}
               <div>
-                <div className="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[10px] flex items-center justify-center border border-emerald-500/30">2</span>
-                  Select Shipments ({selectedShipmentIds.length}/{shipments.length}):
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[10px] flex items-center justify-center border border-emerald-500/30">2</span>
+                    Select Stops ({selectedShipmentIds.length}/{shipments.length}):
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleShuffleShipments}
+                      className="px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold transition-colors cursor-pointer"
+                      title="Shuffle between random delivery destinations"
+                    >
+                      🎲 Shuffle Stops
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllShipments}
+                      className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold transition-colors cursor-pointer"
+                      title="Select all 11 city destinations"
+                    >
+                      All (11)
+                    </button>
+                  </div>
                 </div>
                 {shipments.length === 0 ? (
                   <div className="text-xs text-slate-400 p-3 rounded-xl bg-[#111827] border border-slate-800 text-center">
@@ -494,16 +541,6 @@ export default function AdminDashboard() {
               onOptimize={() => selectedVehicle && runOptimization(selectedVehicle.id, selectedShipmentIds, alpha)}
               isOptimizing={isOptimizing}
             />
-
-            {/* Trade-off Curve */}
-            <div id="pareto-chart" className="scroll-mt-20 md:scroll-mt-24">
-              <ParetoChart
-                paretoPoints={paretoPoints}
-                currentAlpha={alpha}
-                onSelectAlpha={handleAlphaChange}
-                solutionMethod={routeResult?.solution_method}
-              />
-            </div>
           </div>
 
           {/* Right Column: Map & Results (8 cols) */}
@@ -550,35 +587,77 @@ export default function AdminDashboard() {
                         <th className="px-3 py-2">Climate Risk</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {routeResult.legs.map((leg) => (
-                        <tr key={leg.sequence_order} className="hover:bg-[#111827]/40">
-                          <td className="px-3 py-2 font-mono font-bold text-emerald-400">
-                            #{leg.sequence_order}
-                          </td>
-                          <td className="px-3 py-2 text-slate-300">{leg.from_stop}</td>
-                          <td className="px-3 py-2 text-slate-100 font-semibold">{leg.to_stop}</td>
-                          <td className="px-3 py-2 font-mono">{leg.distance_km} km</td>
-                          <td className="px-3 py-2 font-mono text-amber-300">{leg.time_min} min</td>
-                          <td className="px-3 py-2 font-mono font-bold text-emerald-400">
-                            {leg.co2_kg} kg
-                          </td>
-                          <td className="px-3 py-2">
-                            {leg.climate_risk_flag ? (
-                              <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold cursor-help"
-                                title={leg.climate_risk_note}
-                              >
-                                <AlertTriangle className="w-3 h-3 text-amber-400" />
-                                Flagged Risk
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-500">Normal</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    {/* ── Animated Leg Rows ────────────────────────────────────────────────
+                        LayoutGroup scopes the layout animations to this table only.
+                        motion.tbody acts as the staggerContainer so entering legs
+                        cascade in sequence (staggerChildren: 0.06 from motion.js).
+                        Each motion.tr has `layout` so when alpha changes and legs
+                        reorder, rows slide to new positions via transform (no reflow).
+                        The climate_risk_flag cell uses AnimatePresence + opacity-only
+                        transition — the badge fades in/out rather than hard-swapping.
+                        ─────────────────────────────────────────────────────────────── */}
+                    <LayoutGroup id="leg-rows">
+                      <motion.tbody
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                        className="divide-y divide-slate-800/60"
+                      >
+                        {routeResult.legs.map((leg) => (
+                          <motion.tr
+                            key={leg.sequence_order}
+                            variants={staggerItem}
+                            layout
+                            transition={{ duration: DURATION_STANDARD, ease: EASE_EMPHASIZED }}
+                            className="hover:bg-[#111827]/40 accelerated-ui-element"
+                            style={{ originY: 0 }}
+                            animate={{
+                              opacity: leg.climate_risk_flag ? 0.75 : 1,
+                            }}
+                          >
+                            <td className="px-3 py-2 font-mono font-bold text-emerald-400">
+                              #{leg.sequence_order}
+                            </td>
+                            <td className="px-3 py-2 text-slate-300">{leg.from_stop}</td>
+                            <td className="px-3 py-2 text-slate-100 font-semibold">{leg.to_stop}</td>
+                            <td className="px-3 py-2 font-mono">{leg.distance_km} km</td>
+                            <td className="px-3 py-2 font-mono text-amber-300">{leg.time_min} min</td>
+                            <td className="px-3 py-2 font-mono font-bold text-emerald-400">
+                              {leg.co2_kg} kg
+                            </td>
+                            <td className="px-3 py-2">
+                              {/* AnimatePresence lets the badge fade in when risk is flagged
+                                  and fade out when it clears — opacity only, no width/height. */}
+                              <AnimatePresence mode="wait" initial={false}>
+                                {leg.climate_risk_flag ? (
+                                  <motion.span
+                                    key="flagged"
+                                    initial={{ opacity: 0, scale: 0.92 }}
+                                    animate={{ opacity: 1, scale: 1, transition: { duration: DURATION_STANDARD, ease: EASE_EMPHASIZED } }}
+                                    exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.12, ease: EASE_EMPHASIZED } }}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold cursor-help"
+                                    title={leg.climate_risk_note}
+                                  >
+                                    <AlertTriangle className="w-3 h-3 text-amber-400" />
+                                    Flagged Risk
+                                  </motion.span>
+                                ) : (
+                                  <motion.span
+                                    key="normal"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1, transition: { duration: DURATION_STANDARD, ease: EASE_EMPHASIZED } }}
+                                    exit={{ opacity: 0, transition: { duration: 0.1, ease: EASE_EMPHASIZED } }}
+                                    className="text-[10px] text-slate-500"
+                                  >
+                                    Normal
+                                  </motion.span>
+                                )}
+                              </AnimatePresence>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </motion.tbody>
+                    </LayoutGroup>
                   </table>
                 </div>
               </div>
@@ -619,6 +698,7 @@ export default function AdminDashboard() {
         isOpen={showExplainer}
         onClose={() => setShowExplainer(false)}
         vehicleType={selectedVehicle?.vehicle_type}
+        routeResult={activeRouteResult || routeResult}
       />
       <DemoGuideModal
         isOpen={showDemoGuide}

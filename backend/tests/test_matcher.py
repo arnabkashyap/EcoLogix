@@ -102,7 +102,9 @@ def test_matcher_no_keyword_matching_and_distance_exclusion(db_session):
     db_session.add_all([s_nw, s_apex_far, s_apex_near])
     db_session.commit()
 
-    matches = find_load_pool_matches("tenant-northwind", db_session, radius_km=15.0)
+    res = find_load_pool_matches("tenant-northwind", db_session, radius_km=15.0)
+    matches = res["matches"]
+    rejected = res.get("rejected_candidates", [])
 
     # Check that s_apex_far (Kolkata) is NOT matched despite having 'pool'/'Return' in title
     matched_ids = [m["id"] for m in matches]
@@ -150,7 +152,8 @@ def test_co2_saved_scales_with_actual_computed_distance(db_session):
     db_session.add_all([s_nw, s_apex_short])
     db_session.commit()
 
-    matches = find_load_pool_matches("tenant-northwind", db_session, radius_km=15.0)
+    res = find_load_pool_matches("tenant-northwind", db_session, radius_km=15.0)
+    matches = res["matches"]
     match_entry = next((m for m in matches if m["id"] == "dynamic-match-ship-apex-short"), None)
     assert match_entry is not None
 
@@ -158,3 +161,50 @@ def test_co2_saved_scales_with_actual_computed_distance(db_session):
     assert match_entry["distance_km"] < 10.0
     # Expected CO2 for ~3.3km heavy truck segment is < 15 kg CO2 (not 28.6 kg)
     assert match_entry["co2_saved_kg"] < 15.0
+
+
+def test_matcher_rejection_reasons(db_session):
+    """
+    Asserts that overweight shipments or out-of-radius shipments are categorized with explicit rejection reasons.
+    """
+    s_nw = Shipment(
+        id="ship-nw-gw-1",
+        tenant_id="tenant-northwind",
+        title="ISBT to Bamunimaidam",
+        origin_name="Betkuchi ISBT",
+        origin_lat=26.1214,
+        origin_lng=91.7319,
+        dest_name="Bamunimaidam Industrial Estate",
+        dest_lat=26.1884,
+        dest_lng=91.7821,
+        weight_kg=5000.0,
+        delivery_window_start="08:00",
+        delivery_window_end="12:00",
+    )
+
+    # Apex shipment that exceeds capacity limit
+    s_apex_heavy = Shipment(
+        id="ship-apex-heavy",
+        tenant_id="tenant-apex",
+        title="Overweight Heavy Transformer",
+        origin_name="Bamunimaidam",
+        origin_lat=26.1884,
+        origin_lng=91.7821,
+        dest_name="Betkuchi ISBT",
+        dest_lat=26.1214,
+        dest_lng=91.7319,
+        weight_kg=25000.0,  # > 18000 kg max
+        delivery_window_start="09:00",
+        delivery_window_end="14:00",
+    )
+
+    db_session.add_all([s_nw, s_apex_heavy])
+    db_session.commit()
+
+    res = find_load_pool_matches("tenant-northwind", db_session, radius_km=15.0, max_capacity_kg=18000.0)
+    rejected = res.get("rejected_candidates", [])
+    rej_heavy = next((r for r in rejected if r["shipment_id"] == "ship-apex-heavy"), None)
+
+    assert rej_heavy is not None
+    assert rej_heavy["category"] == "capacity_exceeded"
+    assert "capacity exceeded" in rej_heavy["rejection_reason"].lower()

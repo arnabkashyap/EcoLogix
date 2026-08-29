@@ -8,11 +8,11 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { id: 'route-optimizer', label: 'Route Optimizer', icon: SlidersHorizontal },
-  { id: 'map-view', label: 'Route Map', icon: MapPin },
-  { id: 'ev-comparison', label: 'EV Comparison', icon: Zap },
-  { id: 'load-pool', label: 'Combine Shipments', icon: Layers },
-  { id: 'impact-summary', label: 'Impact Summary', icon: BarChart3 },
+  { id: 'route-optimizer', label: 'Plan Route', icon: SlidersHorizontal },
+  { id: 'map-view', label: 'View Map', icon: MapPin },
+  { id: 'ev-comparison', label: 'EV Trucks', icon: Zap },
+  { id: 'load-pool', label: 'Share Loads', icon: Layers },
+  { id: 'impact-summary', label: 'CO₂ Saved', icon: BarChart3 },
 ];
 
 export function NavBar({ activeTab, onSelectTab }) {

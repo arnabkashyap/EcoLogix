@@ -40,13 +40,13 @@ export default function TripPlanForm() {
       
       <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
         <Sparkles className="w-4 h-4"/>
-        <span>Smart Driver Trip Configurator</span>
+        <span>Set Up Your Trip</span>
       </div>
 
-      {/* Cargo & Destination */}
+      {/* Load & Where to Go */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-slate-400">Cargo Quantity (kg)</label>
+          <label className="text-xs text-slate-400">Goods Weight (kg)</label>
           <input
             type="number"
             value={cargoWeight}
@@ -56,20 +56,20 @@ export default function TripPlanForm() {
           />
         </div>
         <div>
-          <label className="text-xs text-slate-400">Destination</label>
+          <label className="text-xs text-slate-400">Where to Deliver</label>
           <input
             type="text"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
-            placeholder="e.g. Guwahati Hub 4"
+            placeholder="e.g. Guwahati Depot 4"
             className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-sm mt-1 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all"
           />
         </div>
       </div>
 
-      {/* Vehicle Selector & AI Auto-fill Panel */}
+      {/* Truck Type */}
       <div>
-        <label className="text-xs text-slate-400">Vehicle Model</label>
+        <label className="text-xs text-slate-400">Your Truck Model</label>
         <input
           type="text"
           value={vehicle}
@@ -78,11 +78,11 @@ export default function TripPlanForm() {
           className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-sm mt-1 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 outline-none transition-all"
         />
 
-        {/* AI Pulled Vehicle Specs */}
+        {/* Truck Info */}
         <div className="mt-2.5 p-3 rounded-xl bg-slate-900/70 border border-slate-800/80 grid grid-cols-2 gap-2 text-xs">
           <div className="flex items-center gap-1.5 text-slate-300">
             <Truck className="w-4 h-4 text-emerald-400"/>
-            <span>Capacity: <strong>{activeVehicle.capacity} kg</strong></span>
+            <span>Can Carry: <strong>{activeVehicle.capacity} kg</strong></span>
           </div>
           <div className="flex items-center gap-1.5 text-slate-300">
             <Gauge className="w-4 h-4 text-amber-400"/>
@@ -93,14 +93,14 @@ export default function TripPlanForm() {
         {isOverweight && (
           <div className="mt-2 p-2 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2 text-rose-400 text-xs">
             <AlertTriangle className="w-4 h-4 shrink-0"/>
-            <span>Warning: Cargo exceeds vehicle max capacity by {cargoWeight - activeVehicle.capacity} kg!</span>
+            <span>Load too heavy! Over limit by {cargoWeight - activeVehicle.capacity} kg.</span>
           </div>
         )}
       </div>
 
-      {/* Weather Selector & AI Environmental Hazards */}
+      {/* Road & Weather Condition */}
       <div>
-        <label className="text-xs text-slate-400">Current / Expected Weather</label>
+        <label className="text-xs text-slate-400">Today's Weather / Road Condition</label>
         <select
           value={weather}
           onChange={(e) => setWeather(e.target.value)}
@@ -111,18 +111,18 @@ export default function TripPlanForm() {
           ))}
         </select>
 
-        {/* AI Pulled Weather Hazard Telemetry */}
+        {/* Road Risk Info */}
         <div className="mt-2.5 p-3 rounded-xl bg-slate-900/70 border border-slate-800/80 space-y-2 text-xs">
           <div className="flex justify-between items-center text-slate-300">
-            <span className="flex items-center gap-1.5"><ShieldAlert className="w-4 h-4 text-cyan-400"/> Flood Risk:</span>
+            <span className="flex items-center gap-1.5"><ShieldAlert className="w-4 h-4 text-cyan-400"/> Water on Road:</span>
             <span className={`font-semibold ${activeHazard.riskColor}`}>{activeHazard.flood}</span>
           </div>
           <div className="flex justify-between items-center text-slate-300">
-            <span className="flex items-center gap-1.5"><Wind className="w-4 h-4 text-slate-400"/> Wind Velocity:</span>
+            <span className="flex items-center gap-1.5"><Wind className="w-4 h-4 text-slate-400"/> Wind Speed:</span>
             <span className="font-semibold text-slate-200">{activeHazard.wind}</span>
           </div>
           <div className="flex justify-between items-center text-slate-300">
-            <span className="flex items-center gap-1.5"><CloudRain className="w-4 h-4 text-amber-400"/> Efficiency Impact:</span>
+            <span className="flex items-center gap-1.5"><CloudRain className="w-4 h-4 text-amber-400"/> Extra Fuel Used:</span>
             <span className="font-semibold text-amber-400">{activeHazard.impact}</span>
           </div>
         </div>

@@ -28,7 +28,7 @@ frontend/
 .github/workflows/release.yml # Automated CI pipeline creating draft releases on git tags
 ```
 
-- **[frontend/src/services/api.js](file:///d:/WebDevProject/Tigma2026/frontend/src/services/api.js)** was updated to respect `VITE_API_BASE_URL` when set, falling back to relative `/api/v1` routes for web builds.
+- **[frontend/src/services/api.js](file:///d:/Projects/EcoLogix/frontend/src/services/api.js)** was updated to respect `VITE_API_BASE_URL` when set, falling back to relative `/api/v1` routes for web builds.
 - **Authentication**: Preserves the existing JWT-in-`localStorage` auth flow (`getStoredToken` / `setStoredToken`).
 
 ---

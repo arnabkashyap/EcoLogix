@@ -9,6 +9,16 @@
   --accent-emerald: #10b981;
   --accent-emerald-glow: rgba(16, 185, 129, 0.25);
   --accent-cyan: #06b6d4;
+
+  /* ── Motion / Easing System ─────────────────────────────────────
+     Single source-of-truth for all transitions on both shells.
+     JS consumers: import the mirror constants from src/motion.js
+     CSS consumers: var(--ease-emphasized), var(--duration-standard) …
+  ──────────────────────────────────────────────────────────────── */
+  --ease-emphasized:    cubic-bezier(0.2, 0, 0, 1);
+  --duration-standard:  300ms;
+  --duration-drawer:    350ms;
+  --duration-micro:     150ms;
 }
 
 html {
@@ -35,6 +45,17 @@ body {
 
 .mono-font {
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* GPU Compositing Hint
+   Apply to any element animated by Framer Motion via transform / opacity.
+   Promotes the element to its own compositor layer so the browser never
+   triggers a layout or paint step during the animation.
+   ─────────────────────────────────────────────────────────────────────── */
+.accelerated-ui-element {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Glassmorphism & Liquid Glass Styling */

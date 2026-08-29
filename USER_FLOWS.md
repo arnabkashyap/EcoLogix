@@ -149,8 +149,9 @@ Used by heavy freight truck drivers on mobile devices or in-cab displays to exec
 | **Primary Input** | Multi-stop shipments, $\alpha$-slider | In-cab trip setup & waypoint check-ins |
 | **Key Visualizer** | Pareto chart, Leaflet map, GLEC explainer | Mobile timeline, hazard cards, return match alert |
 | **Return Load Pool** | Provider matching panel | Automated 1-click in-cab acceptance |
-| **Navigation Toggle** | Header pill button (`Header.jsx`) | Header pill button & Profile switch button |
-| **Theme / Design** | Dark Slate Glassmorphism (`#0B0E14`) | Dark Slate Glassmorphism (`#0B0E14`) |
+| **Navigation Dock** | Floating Liquid Glass bottom dock (`NavBar.jsx`) | Mobile bottom tab bar (`MobileApp.jsx`) |
+| **View Switcher** | Header pill & Direct Route `/driver` | Header exit button & Profile switch button |
+| **Theme / Design** | Dark Slate Liquid Glass (`#0B0E14` / `#121722`) | Touch-Optimized Dark Glass (`#0B0E14`) |
 
 ---
 
@@ -158,7 +159,8 @@ Used by heavy freight truck drivers on mobile devices or in-cab displays to exec
 
 - **Routing & Entrypoint**: [frontend/src/App.jsx](file:///d:/Projects/EcoLogix/frontend/src/App.jsx)
 - **Top Bar Header**: [frontend/src/components/Header.jsx](file:///d:/Projects/EcoLogix/frontend/src/components/Header.jsx)
-- **Consumer Hub Main Component**: [frontend/src/AdminDashboard.jsx](file:///d:/Projects/EcoLogix/frontend/src/AdminDashboard.jsx)
+- **Liquid Glass Navigation Bar**: [frontend/src/components/NavBar.jsx](file:///d:/Projects/EcoLogix/frontend/src/components/NavBar.jsx)
+- **Consumer Hub Main View**: [frontend/src/AdminDashboard.jsx](file:///d:/Projects/EcoLogix/frontend/src/AdminDashboard.jsx)
 - **Interactive Route Map**: [frontend/src/components/MapView.jsx](file:///d:/Projects/EcoLogix/frontend/src/components/MapView.jsx)
 - **Driver Portal Shell**: [frontend/src/mobile/MobileApp.jsx](file:///d:/Projects/EcoLogix/frontend/src/mobile/MobileApp.jsx)
 - **Driver Dispatch Overview**: [frontend/src/mobile/views/MobileHome.jsx](file:///d:/Projects/EcoLogix/frontend/src/mobile/views/MobileHome.jsx)
@@ -166,4 +168,4 @@ Used by heavy freight truck drivers on mobile devices or in-cab displays to exec
 - **Driver Step-by-Step Workflow**: [frontend/src/mobile/components/DriverTripFlow.jsx](file:///d:/Projects/EcoLogix/frontend/src/mobile/components/DriverTripFlow.jsx)
 - **Driver Telemetry & Alerts**: [frontend/src/mobile/views/MobileAlerts.jsx](file:///d:/Projects/EcoLogix/frontend/src/mobile/views/MobileAlerts.jsx)
 - **Driver Credentials & Profile**: [frontend/src/mobile/views/MobileProfile.jsx](file:///d:/Projects/EcoLogix/frontend/src/mobile/views/MobileProfile.jsx)
-- **Vercel SPA Deployment Config**: [vercel.json](file:///d:/Projects/EcoLogix/vercel.json)
+- **Vercel Monorepo Deployment**: [vercel.json](file:///d:/Projects/EcoLogix/vercel.json)

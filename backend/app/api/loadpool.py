@@ -24,10 +24,13 @@ def match_load_pool(
     while proving strict data boundary isolation (partner internal details hidden).
     """
     tenant_id = current_tenant["tenant_id"]
-    matches = find_load_pool_matches(tenant_id, db)
+    res = find_load_pool_matches(tenant_id, db)
+    matches = res["matches"]
+    rejected_candidates = res.get("rejected_candidates", [])
     return {
         "tenant_id": tenant_id,
         "requesting_company": current_tenant["company_name"],
         "match_count": len(matches),
         "matches": matches,
+        "rejected_candidates": rejected_candidates,
     }

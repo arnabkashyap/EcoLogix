@@ -52,6 +52,7 @@ app.include_router(emissions.router, prefix="/api/v1/emissions", tags=["Emission
 app.include_router(impact.router, prefix="/api/v1/impact", tags=["Impact"])
 app.include_router(lookup.router, prefix="/api/v1/lookup", tags=["Lookup"])
 app.include_router(data.router, prefix="/api/v1", tags=["Data"])
+app.include_router(driver.router, prefix="/api/v1/driver", tags=["Driver API"])
 app.include_router(driver.router, prefix="/api/driver", tags=["Driver Mobile"])
 
 

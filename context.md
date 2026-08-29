@@ -95,20 +95,28 @@ EcoLogix/
 │   │   ├── api/                    # REST API route handlers
 │   │   │   ├── auth.py             # Multi-tenant context & demo login
 │   │   │   ├── data.py             # Seed data retrieval (vehicles, shipments, depots)
+│   │   │   ├── driver.py           # In-cab driver dispatch & telemetry endpoints
 │   │   │   ├── emissions.py        # Emissions calculation & explainer endpoints
 │   │   │   ├── impact.py           # ESG metrics & savings summary
 │   │   │   ├── jobs.py             # Async job triggers & status
 │   │   │   ├── loadpool.py         # Cross-company load pooling & matching
+│   │   │   ├── lookup.py           # Vehicle brand registry & weather hazard telemetry
 │   │   │   └── routes.py           # Route optimization & Pareto sweep endpoints
 │   │   ├── core/
 │   │   │   ├── auth.py             # Auth & tenant logic
 │   │   │   ├── emissions.py        # GLEC carbon emission calculations
 │   │   │   ├── matcher.py          # Bipartite load matching algorithm
-│   │   │   └── optimizer.py        # Exact + heuristic route solvers & Pareto engine
+│   │   │   ├── optimizer.py        # Exact + heuristic route solvers & Pareto engine
+│   │   │   ├── vehicle_lookup.py   # Truck specs & capacity resolver
+│   │   │   └── weather_lookup.py   # Assam weather & flood hazard model
 │   │   ├── db/
 │   │   │   ├── database.py         # SQLAlchemy engine & session setup
 │   │   │   ├── models.py           # Database entities (Vehicles, Shipments, Routes)
-│   │   │   └── seed.py             # Realistic mock logistics dataset
+│   │   │   └── seed.py             # Realistic mock logistics dataset (Guwahati regional nodes)
+│   │   ├── decision_engine/        # Multi-criteria decision engine service
+│   │   ├── emissions/              # Dedicated emissions calculator & service
+│   │   ├── load_pooling/           # Bipartite matching & scoring services
+│   │   ├── optimization/           # Combinatorial & Pareto optimization modules
 │   │   ├── schemas/                # Pydantic request/response schemas
 │   │   └── main.py                 # FastAPI application factory & middleware
 │   ├── requirements.txt            # Python dependencies
@@ -117,30 +125,51 @@ EcoLogix/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── AlphaSlider.jsx          # Interactive fastest-to-greenest slider
-│   │   │   ├── DemoGuideModal.jsx       # Guided hackathon walk-through modal
+│   │   │   ├── DemoGuideModal.jsx       # Guided walk-through modal
 │   │   │   ├── EVComparisonCard.jsx     # EV vs Diesel carbon/cost comparative card
 │   │   │   ├── EmissionsExplainer.jsx   # Formula breakdown & explainability drawer
-│   │   │   ├── Header.jsx               # Navigation bar & tenant switcher
-│   │   │   ├── ImpactSummaryPanel.jsx   # CO2 saved, fuel saved, trees equivalent
+│   │   │   ├── Header.jsx               # Navigation header with max-w-7xl alignment
+│   │   │   ├── ImpactSummaryPanel.jsx   # KPI carbon avoided, fuel saved, tree-years
 │   │   │   ├── LoadPoolPanel.jsx        # Deadhead matching & capacity pooler
-│   │   │   ├── MapView.jsx              # Leaflet route visualization & address search
-│   │   │   ├── NavBar.jsx               # View selector tabs
+│   │   │   ├── MapView.jsx              # Leaflet route visualization & mode switcher
+│   │   │   ├── NavBar.jsx               # Floating Liquid Glass bottom navigation dock
 │   │   │   ├── ParetoChart.jsx          # Recharts Pareto frontier visualizer
+│   │   │   ├── ShipmentInputForm.jsx    # Custom stop & waypoint input form
+│   │   │   ├── VoiceNavigation.jsx      # Driver voice navigation overlay
 │   │   │   └── WalkthroughTooltip.jsx   # Step-by-step interactive onboarding
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx          # Multi-tenant state & user context
+│   │   ├── data/
+│   │   │   └── truck_brands.json        # Commercial vehicle specs registry (Tata, Eicher, Mahindra)
+│   │   ├── mobile/                      # Driver Portal mobile-first subsystem
+│   │   │   ├── components/
+│   │   │   │   └── DriverTripFlow.jsx   # 6-step in-cab route execution & backhaul acceptance
+│   │   │   ├── views/
+│   │   │   │   ├── MobileAlerts.jsx     # Real-time telemetry & hazard notifications
+│   │   │   │   ├── MobileHome.jsx       # Driver dispatch queue & trip launcher
+│   │   │   │   ├── MobileProfile.jsx    # Driver credentials & lifetime CO2 savings
+│   │   │   │   ├── MobileTrips.jsx      # Active trip container
+│   │   │   │   └── TripPlanForm.jsx     # Smart trip configurator with weather telemetry
+│   │   │   └── MobileApp.jsx            # Driver Portal shell entrypoint
 │   │   ├── services/
-│   │   │   └── api.js                   # Axios/Fetch API client bindings
-│   │   ├── App.jsx                      # Main dashboard layout & state orchestration
-│   │   ├── index.css                    # Design system styling & custom animations
+│   │   │   └── api.js                   # Axios/Fetch API client with VITE_API_BASE_URL support
+│   │   ├── AdminDashboard.jsx           # Consumer Hub logistics strategy console (/)
+│   │   ├── App.jsx                      # Top-level React Router (routes / and /driver)
+│   │   ├── index.css                    # Liquid Glass tokens & dark logistics theme
+│   │   ├── mobile.css                   # Touch-friendly mobile driver styling
 │   │   └── main.jsx                     # Vite React root
+│   ├── src-tauri/                       # Tauri v2 Windows desktop wrapper
+│   ├── android/                         # Capacitor 8 Android native wrapper
 │   ├── package.json
 │   └── vite.config.js
 ├── Dockerfile.backend               # Container configuration for backend
 ├── docker-compose.yml               # Local multi-container development configuration
 ├── vercel.json                      # Vercel monorepo deployment & rewrite configuration
 ├── features.md                      # MoSCoW feature breakdown and traceability
-├── hackathon-spec.md                # Hackathon requirements & scoring matrix
+├── context.md                       # Technical context and GLEC specifications
+├── data-flow-dynamic.md             # Telemetry data flow & Guwahati regional node specification
+├── USER_FLOWS.md                    # End-to-end interactive workflows
+├── RELEASE.md                       # Windows & Android native packaging guide
 └── EcoLogix_PRD.md                  # Comprehensive Product Requirement Document
 ```
 
@@ -151,7 +180,7 @@ EcoLogix/
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/health` | `GET` | Health check and system readiness status |
-| `/api/v1/data/depots` | `GET` | Retrieve depot locations |
+| `/api/v1/data/depots` | `GET` | Retrieve depot locations (Guwahati hub, etc.) |
 | `/api/v1/data/vehicles` | `GET` | Retrieve active fleet vehicles |
 | `/api/v1/data/shipments` | `GET` | Retrieve pending shipments/stops |
 | `/api/v1/routes/optimize` | `POST` | Solve optimal route for given vehicle, stops, and $\alpha$ |
@@ -160,6 +189,10 @@ EcoLogix/
 | `/api/v1/emissions/calculate` | `POST` | Compute GLEC segment emissions with full breakdown |
 | `/api/v1/emissions/compare-ev` | `POST` | Compare current route against electric vehicle alternative |
 | `/api/v1/impact/summary` | `GET` | Cumulative environmental & financial metrics |
+| `/api/v1/driver/status` | `GET` / `POST` | In-cab driver telemetry, active step, and GPS waypoint status |
+| `/api/v1/driver/accept-return` | `POST` | 1-click backhaul load acceptance for deadhead reduction |
+| `/api/v1/lookup/vehicle-specs` | `GET` | Commercial truck specifications (capacity, payload, fuel rate) |
+| `/api/v1/lookup/weather-hazards`| `GET` | Regional weather hazard telemetry (flood risk, wind penalty) |
 
 ---
 

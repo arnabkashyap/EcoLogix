@@ -1,5 +1,9 @@
 /* mobile.css - Driver Mobile App Styles */
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .mobile-shell-wrapper {
   display: flex;
   justify-content: center;
@@ -7,6 +11,7 @@
   min-height: 100vh;
   background-color: #0f172a;
   padding: 1rem;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-device-container {
@@ -160,11 +165,21 @@
   align-items: center;
   gap: 0.5rem;
   margin-top: 1rem;
+  user-select: none;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.mobile-btn:active {
+  transform: scale(0.97);
 }
 
 .mobile-btn-primary {
   background-color: #10b981;
   color: #0f172a;
+}
+
+.mobile-btn-primary:active {
+  background-color: #059669;
 }
 
 .mobile-btn-secondary {
@@ -173,9 +188,17 @@
   border: 2px solid #475569;
 }
 
+.mobile-btn-secondary:active {
+  background-color: rgba(71, 85, 105, 0.3);
+}
+
 .mobile-btn-danger {
   background-color: #ef4444;
   color: white;
+}
+
+.mobile-btn-danger:active {
+  background-color: #dc2626;
 }
 
 /* Progress List */

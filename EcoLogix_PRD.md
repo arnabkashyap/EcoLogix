@@ -4,21 +4,19 @@
 
 | | |
 |---|---|
-| **Version** | 0.1 (Draft) |
-| **Date** | August 26, 2026 |
-| **Status** | Ready for build |
+| **Version** | 1.0 (Production / Prototype Verified) |
+| **Date** | August 2026 |
+| **Status** | Implemented & Verified |
 | **Owner** | EcoLogix Team |
-| **Doc type** | Hackathon PRD — scoped for a working demo, not a production spec |
-
-> **Assumptions made in this draft:** a team of 4–5 people, a ~36-hour build window (typical for most hackathons), and no paid/enterprise API access beyond free-tier mapping and traffic APIs. Adjust Section 13 (Timeline) and Section 8 (Tech Stack) if your actual constraints differ.
+| **Doc type** | Full System & Product Requirements Document |
 
 ---
 
 ## 1. Executive Summary
 
-EcoLogix is a B2B route-optimization engine that treats **carbon emissions as a first-class routing objective**, alongside transit time and cost. It ingests fleet telemetry, delivery windows, and traffic conditions to model fuel/energy consumption per route segment, computes a **best route options frontier of routes** (fast vs. clean vs. cheap), and identifies **combine shipments opportunities** across delivery companies so that return legs don't have to run empty.
+EcoLogix is a multimodal, carbon-aware logistics intelligence engine that unifies **GLEC-compliant emissions accounting**, **bi-objective ($\alpha$-weighted) combinatorial route optimization**, **cross-company load pooling**, and **in-cab driver execution telemetry** into a dual-interface web and mobile ecosystem.
 
-The hackathon deliverable is a working prototype that ingests a mock (or lightly real) dataset of vehicles, shipments, and delivery windows, computes optimized vs. baseline routes, visualizes the trade-off between speed and emissions, and demonstrates at least one cross-provider load-pooling match.
+The system empowers fleet dispatchers and sustainability managers to explore the optimal **Pareto frontier** between delivery speed and carbon emissions, while equipping truck drivers with a mobile in-cab portal (`/driver`) to navigate waypoints, monitor weather hazards, and accept automated backhaul return loads with one click.
 
 ---
 
@@ -26,44 +24,31 @@ The hackathon deliverable is a working prototype that ingests a mock (or lightly
 
 Freight and logistics is a disproportionate contributor to transport-related carbon emissions, and a large share of that impact is avoidable:
 
-- **Empty (deadhead) miles are pervasive.** Independent studies place empty miles at roughly **15–35% of all truck miles**, with recent large-scale carrier data (Uber Freight, 2023) measuring around **25%** on a digital brokerage network — and estimating that up to **64% of empty miles could be eliminated** through better network-level optimization.
-- **Freight is a major and growing emissions source.** Transport accounts for roughly **a fifth to a quarter of global CO₂ emissions**, and freight movement alone is estimated at around **10% of global CO₂ emissions** — with global freight demand projected to roughly **double by 2050**.
-- **Road freight is the dominant mode by emissions**, even though rail and intermodal alternatives emit a small fraction per ton-mile — meaning smarter mode selection, not just route selection, has real carbon upside.
-- **Routing systems today optimize for time or distance, not carbon.** Most commercial route planners minimize transit time or mileage and treat vehicle load, fuel-efficiency profile, and empty-leg matching as afterthoughts (or ignore them entirely).
-- **Providers plan in silos.** Carrier A's empty return leg and Carrier B's unfulfilled shipment request often exist in the same lane at the same time, but there's no shared layer that matches them.
-
-**Net effect:** more fuel burned, more CO₂ emitted, and more cost than necessary — for outcomes that are largely fixable with better data and optimization, not new infrastructure.
+- **Empty (deadhead) miles are pervasive.** Independent studies place empty miles at roughly **15–35% of all truck miles**, with large-scale carrier networks averaging around **25%** empty transit.
+- **Freight accounts for ~10% of global CO₂ emissions.** Global freight demand is projected to roughly **double by 2050**.
+- **Traditional routing systems optimize strictly for time or distance.** Commercial route planners minimize drive duration or mileage while ignoring vehicle load factors, engine thermal profiles, and cross-carrier pooling.
+- **Logistics providers operate in data silos.** Carrier A's empty return leg and Carrier B's pending shipment often exist in the same transport corridor without a shared matching layer.
 
 ---
 
-## 3. Goals & Objectives
+## 3. Goals & Key Objectives
 
-### Primary goal (hackathon-scoped)
-Prove that a routing engine which explicitly optimizes for **carbon emissions alongside time** — and that surfaces **cross-provider load-pooling** — produces materially better outcomes than time-only routing, using a live, demoable prototype.
-
-### Success criteria for the demo
-- Optimized routes show a **measurable, displayed CO₂ reduction** (target: ≥15–20%) vs. a naive/baseline routing approach on the same dataset.
-- A **Pareto frontier** (time vs. emissions) is visualized and interactively explorable.
-- At least **one concrete load-pooling match** is generated and shown end-to-end (empty leg → matched shipment → emissions saved).
-- The system runs on a self-contained demo dataset with no live-API dependency required to present.
-
-### Non-goals (out of scope for the hackathon)
-- Production-grade authentication, multi-tenant billing, or provider onboarding flows.
-- Real-time integration with live carrier telemetry systems (ELD/TMS) — mocked/simulated telemetry is acceptable.
-- Full multimodal booking/settlement (rail/ocean carrier contracts) — model mode choice, don't build a booking engine.
-- Mobile driver app. Web dashboard only.
-- Legally certified carbon accounting (e.g., GLEC Framework audit-grade reporting) — directionally correct estimates are sufficient.
+### Primary Goals
+1. **Bi-Objective Route Optimization**: Produce routes that measurably reduce carbon output (≥15–25%) vs. naive time-only baselines across an interactive $\alpha$-slider and Pareto frontier.
+2. **Cross-Company Load Pooling**: Identify and assign empty return backhaul capacity to eliminate deadhead miles.
+3. **Dual Interface**: Provide both a strategic **Consumer Hub (`/`)** and an in-cab **Driver Portal (`/driver`)**.
+4. **Transparency & GLEC Compliance**: Expose mathematical emissions formulas via interactive explainers.
 
 ---
 
 ## 4. Target Users & Personas
 
-| Persona | Role | Core need |
-|---|---|---|
-| **Fleet Operations Manager** | Plans daily multi-stop routes for an owned fleet | Minimize cost/time without ignoring emissions targets set by leadership |
-| **Sustainability / ESG Lead** | Reports on Scope 3 logistics emissions | Needs visibility into emissions per shipment/route and a lever to reduce them |
-| **Freight Broker / 3PL Coordinator** | Matches shippers to available carrier capacity | Wants to fill empty legs profitably and reduce deadhead cost |
-| **Shipper / Dispatcher** | Books shipments across one or more carriers | Wants delivery-window compliance at the lowest cost/emissions combination |
+| Persona | Role | Core Need | Interface |
+|---|---|---|---|
+| **Fleet Operations Manager** | Plans daily multi-stop routes | Minimize transit duration while meeting corporate emission targets | Consumer Hub (`/`) |
+| **Sustainability / ESG Lead** | Reports Scope 3 logistics emissions | Quantifiable Well-to-Wheel (WTW) carbon analytics and equivalent tree metrics | Consumer Hub (`/`) |
+| **Freight Broker / 3PL Coordinator** | Matches shippers to available carrier capacity | Monetize empty return backhaul legs and reduce deadhead waste | Consumer Hub (`/`) |
+| **Freight Truck Driver** | In-cab route execution & telemetry | Real-time waypoint GPS updates, weather hazard warnings, and 1-click backhaul load acceptance | Driver Portal (`/driver`) |
 
 ---
 

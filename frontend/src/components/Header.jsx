@@ -21,11 +21,11 @@ export function Header({ onOpenDemoGuide }) {
                 Eco<span className="text-emerald-400">Logix</span>
               </h1>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold uppercase tracking-wider">
-                {isDriverMode ? 'Driver Portal' : 'Consumer Hub'}
+                {isDriverMode ? 'Driver App' : 'Admin Panel'}
               </span>
             </div>
             <p className="text-xs text-slate-400 font-medium hidden md:block">
-              Multiple Transport Types Route & Eco-Friendly Goods Transportation Engine
+              Save fuel, cut CO₂, find shared loads — all in one place
             </p>
           </div>
         </div>
@@ -38,7 +38,7 @@ export function Header({ onOpenDemoGuide }) {
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-800 transition-all cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
-              Demo Guide
+              How It Works
             </button>
           )}
 
@@ -52,7 +52,7 @@ export function Header({ onOpenDemoGuide }) {
               }`}
             >
               <Leaf className={`w-3.5 h-3.5 ${!isDriverMode ? 'text-emerald-400' : ''}`} />
-              Consumer Hub
+              Admin Panel
             </button>
             <button
               onClick={() => navigate('/driver')}
@@ -63,7 +63,7 @@ export function Header({ onOpenDemoGuide }) {
               }`}
             >
               <Truck className={`w-3.5 h-3.5 ${isDriverMode ? 'text-emerald-400' : ''}`} />
-              Driver Portal
+              Driver App
             </button>
           </div>
         </div>

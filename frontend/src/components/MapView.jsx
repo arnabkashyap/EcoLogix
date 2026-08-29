@@ -77,7 +77,14 @@ function MapFixer() {
   return null;
 }
 
-export function MapView({ routeResult, depot, routeCategory, setRouteCategory }) {
+export function MapView({
+  routeResult,
+  depot,
+  routeCategory,
+  setRouteCategory,
+  customRouteLayer = null,
+  children = null,
+}) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -385,41 +392,86 @@ export function MapView({ routeResult, depot, routeCategory, setRouteCategory })
           </Marker>
         )}
 
-        {/* Stop Markers Removed */}
-        {/* Climate Risk Markers Removed */}
-        
-        {/* TRAFFIC_ZONES_INSERT */}
-        {[
-          { id: 1, lat: 26.1445, lng: 91.7362, radius_m: 800, level: 'heavy' },
-          { id: 2, lat: 26.1365, lng: 91.7998, radius_m: 600, level: 'medium' },
-          { id: 3, lat: 26.1550, lng: 91.7725, radius_m: 700, level: 'heavy' },
-          { id: 4, lat: 26.1620, lng: 91.7580, radius_m: 900, level: 'medium' },
-          { id: 5, lat: 26.1150, lng: 91.7225, radius_m: 500, level: 'heavy' }
-        ].map((zone) => (
-          <Circle
-            key={zone.id}
-            center={[zone.lat, zone.lng]}
-            radius={zone.radius_m}
-            pathOptions={{
-              fillColor: zone.level === 'heavy' ? '#ef4444' : '#10B981',
-              fillOpacity: zone.level === 'heavy' ? 0.5 : 0.25,
-              color: 'transparent' // visual only
-            }}
-            interactive={false} // no popups/click handlers
-          />
-        ))}
+        {/* Stop Markers */}
+        {optimizedStops.map((stop, idx) => {
+          if (idx === 0 || (idx === optimizedStops.length - 1 && stop.id === 'depot')) return null;
+          return (
+            <Marker
+              key={`${stop.id}-${idx}`}
+              position={[stop.lat, stop.lng]}
+              icon={L.divIcon({
+                className: 'custom-stop-marker',
+                html: `<div style="background: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 8px rgba(16, 185, 129, 0.8); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #022c22; font-size: 11px;">${idx}</div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12],
+              })}
+            >
+              <Popup>
+                <div className="p-1 text-slate-900 font-semibold text-xs">
+                  <div className="font-bold text-emerald-800">Stop #{idx}: {stop.dest_name || stop.title}</div>
+                  <div className="text-[10px] text-slate-600 mt-0.5">Payload: {stop.load_kg ? `${Math.round(stop.load_kg)} kg` : 'N/A'}</div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
 
-        {/* Optimized Path (Solid Emerald Green) */}
-        {optPolyline.length > 1 && (
-          <Polyline
-            positions={optPolyline}
-            pathOptions={{
-              color: '#10b981',
-              weight: 5,
-              opacity: 0.95,
-            }}
-          />
+        {/* Custom Layer (for ConsumerTrackingView routable road line) or Default Polylines (AdminDashboard) */}
+        {customRouteLayer ? (
+          customRouteLayer
+        ) : routeResult?.legs && routeResult.legs.length > 0 ? (
+          routeResult.legs.map((leg) => {
+            const isFlagged = leg.climate_risk_flag;
+            const positions = [
+              [leg.from_lat, leg.from_lng],
+              [leg.to_lat, leg.to_lng],
+            ];
+            return (
+              <Polyline
+                key={`leg-${leg.sequence_order}`}
+                positions={positions}
+                pathOptions={{
+                  color: isFlagged ? '#f59e0b' : '#10b981',
+                  weight: isFlagged ? 5 : 4,
+                  dashArray: isFlagged ? '8 6' : undefined,
+                  opacity: isFlagged ? 0.95 : 0.85,
+                }}
+              >
+                <Popup>
+                  <div className="p-1 text-slate-900 text-xs">
+                    <div className="font-bold flex items-center gap-1">
+                      {isFlagged ? '⚠️ Climate-Flagged Corridor' : '✓ Normal Transit Leg'}
+                    </div>
+                    <div className="text-[11px] font-semibold mt-1">
+                      {leg.from_stop} → {leg.to_stop}
+                    </div>
+                    <div className="text-[10px] text-slate-600 mt-0.5">
+                      Distance: {leg.distance_km} km | Time: {leg.time_min} min | CO₂: {leg.co2_kg} kg
+                    </div>
+                    {isFlagged && (
+                      <div className="mt-1 p-1.5 rounded bg-amber-50 text-amber-900 text-[10px] font-medium border border-amber-200">
+                        {leg.climate_risk_note}
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Polyline>
+            );
+          })
+        ) : (
+          optPolyline.length > 1 && (
+            <Polyline
+              positions={optPolyline}
+              pathOptions={{
+                color: '#10b981',
+                weight: 5,
+                opacity: 0.95,
+              }}
+            />
+          )
         )}
+
+        {children}
       </MapContainer>
     </div>
   </div>

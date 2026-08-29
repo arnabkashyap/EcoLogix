@@ -92,26 +92,59 @@ export const api = {
 };
 
 export const findLoadPoolMatches = (payload) =>
-  apiRequest('/loadpool', {
+  apiRequest('/loadpool/match', {
     method: 'POST',
-    body: JSON.stringify(typeof payload === 'object' ? payload : { id: payload }),
+    body: JSON.stringify(typeof payload === 'object' ? payload : {}),
   });
 
 export const acceptLoadPoolMatch = (matchId) =>
-  apiRequest(`/loadpool/match`, {
+  apiRequest('/loadpool/match', {
     method: 'POST',
-    body: JSON.stringify({ matchId, accepted: true }),
+    body: JSON.stringify({ match_id: matchId, accepted: true }),
   });
 
-export const fetchParetoRoutes = (payload) =>
-  apiRequest('/routes/optimize', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+export const fetchParetoRoutes = async (payload) => {
+  const vehicleId = payload?.vehicle_id || 'veh-nw-101';
+  const shipmentIds = payload?.shipment_ids || ['ship-nw-01', 'ship-nw-02'];
+  const alpha = payload?.alpha ?? 0.5;
+
+  const jobRes = await api.optimizeRoute(vehicleId, shipmentIds, alpha);
+  const jobId = jobRes.job_id;
+
+  let attempts = 0;
+  while (attempts < 15) {
+    await new Promise((r) => setTimeout(r, 400));
+    const statusRes = await api.getJobStatus(jobId);
+    if (statusRes.status === 'completed' && statusRes.result) {
+      return statusRes.result;
+    }
+    if (statusRes.status === 'failed') {
+      throw new Error(statusRes.error || 'Optimization job failed');
+    }
+    attempts++;
+  }
+  throw new Error('Route optimization timed out');
+};
 
 export const fetchDriverTrips = () =>
   apiRequest('/driver/trips', {
     method: 'GET',
+  });
+
+export const fetchDriverStatus = () =>
+  apiRequest('/driver/status', {
+    method: 'GET',
+  });
+
+export const fetchDriverProfile = () =>
+  apiRequest('/driver/profile', {
+    method: 'GET',
+  });
+
+export const updateDriverProfile = (profilePayload) =>
+  apiRequest('/driver/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(profilePayload),
   });
 
 export const updateDriverStatus = (statusPayload) =>

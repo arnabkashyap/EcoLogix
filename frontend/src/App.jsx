@@ -24,6 +24,9 @@ import {
   TrendingDown,
   CheckCircle2,
   AlertTriangle,
+  HelpCircle,
+  RefreshCw,
+  Sliders,
 } from 'lucide-react';
 
 export default function App() {

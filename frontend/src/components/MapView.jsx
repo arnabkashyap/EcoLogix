@@ -226,93 +226,51 @@ export function MapView({ routeResult, depot }) {
   }, [routeResult, optimizedStops, userLocation]);
 
   return (
-    <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
+    <div className="relative w-full h-[480px] rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
       {/* Floating Map Legend & Search Controls Overlay */}
-      <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
+      <div className="absolute top-3 left-3 z-[400] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
         {/* Location Search Bar */}
-        <form onSubmit={handleSearch} className="flex items-center gap-1.5 glass-panel p-1.5 rounded-xl border border-slate-800 shadow-lg bg-slate-950/90">
+        <form onSubmit={handleSearch} className="flex items-center gap-1.5 p-1 rounded-lg border border-slate-800 bg-slate-950/90 text-xs">
           <input
             type="text"
-            placeholder="Type city or address to set exact location..."
+            placeholder="Search city or address..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-slate-900 text-xs text-slate-100 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-800 focus:outline-none focus:border-emerald-500 flex-1"
+            className="bg-slate-900 text-xs text-slate-100 placeholder-slate-500 px-2 py-1 rounded border border-slate-800 focus:outline-none focus:border-emerald-500 flex-1"
           />
           <button
             type="submit"
             disabled={isSearching}
-            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+            className="px-2.5 py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 shrink-0"
           >
-            <Search className="w-3.5 h-3.5" />
+            <Search className="w-3 h-3" />
             {isSearching ? '...' : 'Search'}
           </button>
         </form>
 
         {searchError && (
-          <div className="text-[11px] text-rose-400 bg-slate-950/90 px-3 py-1 rounded-lg border border-rose-500/30">
+          <div className="text-[11px] text-rose-400 bg-slate-950/90 px-2.5 py-1 rounded border border-rose-500/30">
             {searchError}
           </div>
         )}
 
-        {/* Legend Panel & Recenter Buttons */}
-        <div className="glass-panel px-3.5 py-2 rounded-xl text-xs flex flex-wrap items-center gap-3 bg-slate-950/90">
+        {/* Legend & Recenter */}
+        <div className="px-3 py-1.5 rounded-lg text-[11px] bg-slate-950/90 border border-slate-800 flex items-center gap-3 text-slate-300">
           <div className="flex items-center gap-1.5">
-            <span className="w-4 h-1 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
-            <span className="font-semibold text-slate-200">EcoLogix Route</span>
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>Standard</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-4 h-1 bg-rose-500/80 rounded-full border-b border-dashed border-rose-300"></span>
-            <span className="text-slate-400">Baseline (Time-only)</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>EcoLogix</span>
           </div>
-          {hasRiskFlag && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
-              <span>⚠️ Climate Risk Corridor</span>
-            </div>
-          )}
           <button
             onClick={() => fetchUserLocation(true)}
-            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-            title="Recenter on my live location"
+            className="ml-auto text-[10px] text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
-            <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Recenter on my location</span>
+            <Crosshair className="w-3 h-3" /> Recenter
           </button>
         </div>
-
-        {/* User Location Status Badge */}
-        {userLocation && (
-          <div className="glass-panel px-3 py-1.5 rounded-xl text-[11px] text-slate-300 flex items-center justify-between bg-slate-950/90 border border-emerald-500/30">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>
-                {userLocation.name
-                  ? userLocation.name.split(',')[0]
-                  : userLocation.source === 'gps'
-                    ? `Live GPS (${userLocation.accuracy ? `±${userLocation.accuracy}m` : 'active'})`
-                    : userLocation.source === 'search'
-                      ? 'Searched Position'
-                      : 'Pinned Position'}
-              </span>
-            </div>
-            <span className="text-[10px] text-slate-400 italic">Drag marker or click map to adjust</span>
-          </div>
-        )}
-
-        {routeResult && (
-          <div className="glass-panel-glow px-4 py-2 rounded-xl flex items-center gap-3 bg-slate-950/90">
-            <div className="text-emerald-400 font-extrabold text-lg leading-none">
-              -{routeResult.co2_saved_pct}%
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-bold">
-                CO₂ Emissions Saved
-              </div>
-              <div className="text-xs text-slate-300">
-                {routeResult.total_co2_kg} kg vs {routeResult.baseline_co2_kg} kg baseline
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Leaflet Map */}

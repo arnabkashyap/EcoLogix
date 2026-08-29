@@ -90,3 +90,32 @@ export const api = {
   // Impact Summary
   getImpactSummary: () => apiRequest('/impact/summary'),
 };
+
+export const findLoadPoolMatches = (payload) =>
+  apiRequest('/loadpool', {
+    method: 'POST',
+    body: JSON.stringify(typeof payload === 'object' ? payload : { id: payload }),
+  });
+
+export const acceptLoadPoolMatch = (matchId) =>
+  apiRequest(`/loadpool/match`, {
+    method: 'POST',
+    body: JSON.stringify({ matchId, accepted: true }),
+  });
+
+export const fetchParetoRoutes = (payload) =>
+  apiRequest('/routes/optimize', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const fetchDriverTrips = () =>
+  apiRequest('/driver/trips', {
+    method: 'GET',
+  });
+
+export const updateDriverStatus = (statusPayload) =>
+  apiRequest('/driver/status', {
+    method: 'POST',
+    body: JSON.stringify(statusPayload),
+  });

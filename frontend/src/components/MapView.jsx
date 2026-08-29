@@ -77,7 +77,7 @@ function MapFixer() {
   return null;
 }
 
-export function MapView({ routeResult, depot }) {
+export function MapView({ routeResult, depot, routeCategory, setRouteCategory }) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -273,13 +273,38 @@ export function MapView({ routeResult, depot }) {
   }, [routeResult, optimizedStops, userLocation]);
 
   return (
-    <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
-      {/* Floating Map Legend & Search Controls Overlay */}
-      <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
-        <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      {/* Top Route Mode Switcher Bar */}
+      <div className="grid grid-cols-2 gap-2 bg-[#121722] p-1.5 rounded-xl border border-slate-800">
+        <button
+          onClick={() => setRouteCategory && setRouteCategory('faster')}
+          className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            routeCategory === 'faster'
+              ? 'bg-slate-700 text-slate-100 shadow-md border border-slate-600'
+              : 'bg-[#181E2B] text-slate-400 hover:text-slate-200 hover:bg-[#1E2638]'
+          }`}
+        >
+          Faster Route (Time-Optimized)
+        </button>
+        <button
+          onClick={() => setRouteCategory && setRouteCategory('greener')}
+          className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            routeCategory === 'greener' || !routeCategory
+              ? 'bg-[#10B981] text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)] font-black'
+              : 'bg-[#181E2B] text-slate-400 hover:text-slate-200 hover:bg-[#1E2638]'
+          }`}
+        >
+          Greener Route (Carbon-Aware)
+        </button>
+      </div>
+
+      {/* Map Container */}
+      <div className="relative w-full h-[500px] rounded-2xl overflow-hidden glass-panel border border-slate-800/80 shadow-2xl">
+        {/* Floating Overlay Controls inside Map */}
+        <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2">
           <button
             onClick={handleRecenter}
-            className="px-3 py-2 rounded-xl bg-[#111827]/90 hover:bg-[#1F2937] text-slate-300 hover:text-emerald-400 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
+            className="px-3.5 py-2 rounded-xl bg-[#0B0E14]/85 hover:bg-[#161B26] text-slate-200 border border-slate-700/80 text-xs font-bold flex items-center gap-2 shadow-xl transition-all cursor-pointer backdrop-blur-md"
             title="Recenter on my live location"
           >
             <Crosshair className="w-4 h-4 text-emerald-400" />
@@ -287,17 +312,16 @@ export function MapView({ routeResult, depot }) {
           </button>
           <button
             onClick={() => setIsNavigating(!isNavigating)}
-            className={`px-3 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
               isNavigating 
                 ? 'bg-rose-500 hover:bg-rose-400 text-slate-950' 
-                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                : 'bg-[#10B981] hover:bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
             }`}
           >
             <Navigation className="w-4 h-4" />
             <span>{isNavigating ? 'Stop Navigation' : 'Start Navigation'}</span>
           </button>
         </div>
-      </div>
 
       {/* Leaflet Map */}
       <MapContainer
@@ -398,6 +422,7 @@ export function MapView({ routeResult, depot }) {
         )}
       </MapContainer>
     </div>
+  </div>
   );
 }
 

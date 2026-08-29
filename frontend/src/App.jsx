@@ -174,29 +174,27 @@ export default function App() {
   }, [routeResult, routeCategory]);
 
   return (
-    <div className="min-h-screen bg-[#181A20] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col font-sans">
       {/* Header Navigation */}
       <Header onOpenDemoGuide={() => setShowDemoGuide(true)} />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 pb-20 md:pb-24">
-        {/* Level 1 Hero Banner & Purpose (10-second clarity, Req #1) */}
-        <div className="glass-panel p-5 md:p-6 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/60 via-slate-900/90 to-slate-950/90 shadow-2xl relative overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 pb-28">
+        {/* Hero Banner (Figma Screenshot 2) */}
+        <div className="p-6 rounded-2xl border border-emerald-500/30 bg-[#0E1420] shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col gap-3 relative z-10">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-extrabold border border-emerald-500/30 flex items-center gap-1">
-                  <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Carbon-Aware Freight Optimization
-                </span>
-              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold border border-emerald-500/30 inline-flex items-center gap-1.5 mb-2">
+                <Leaf className="w-3.5 h-3.5 text-emerald-400" /> Carbon-Aware Freight Optimization
+              </span>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-100 tracking-tight leading-snug">
                 This route saves{' '}
-                <span className="text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                <span className="text-[#10B981] font-black drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
                   {routeResult ? `${routeResult.co2_saved_pct}%` : '0%'} CO₂
                 </span>{' '}
                 and uses{' '}
-                <span className="text-emerald-300">
-                  {routeResult ? `${routeResult.total_distance_km} km` : '--'}
+                <span className="text-[#34D399] font-black">
+                  {routeResult ? `${routeResult.total_distance_km} km` : '166.99 km'}
                 </span>{' '}
                 compared to the standard route.
               </h2>
@@ -204,71 +202,75 @@ export default function App() {
           </div>
         </div>
 
-        {/* Level 1 KPI Summary Cards */}
+        {/* Level 1 Stat Cards Grid (4 Cards across, Figma Screenshot 2) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-panel p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 flex items-center justify-between">
+          {/* Card 1: CO2 Reduction */}
+          <div className="p-4 rounded-2xl border border-emerald-500/30 bg-[#121722] flex items-center justify-between shadow-lg">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                CO₂ Reduction
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
+                CO₂ REDUCTION
               </div>
-              <div className="text-2xl md:text-3xl font-black text-emerald-400 flex items-center gap-1 mt-0.5">
+              <div className="text-2xl md:text-3xl font-black text-emerald-400 flex items-center gap-1 mt-1">
                 <TrendingDown className="w-6 h-6 text-emerald-400" />
-                {routeResult ? `-${routeResult.co2_saved_pct}%` : '0%'}
+                {routeResult ? `-${routeResult.co2_saved_pct}%` : '-0%'}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">
+              <div className="text-[10px] text-slate-400 mt-1">
                 vs standard route
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <Leaf className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          {/* Card 2: Greener Route CO2 */}
+          <div className="p-4 rounded-2xl border border-slate-800 bg-[#121722] flex items-center justify-between shadow-lg">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Greener Route CO₂
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                GREENER ROUTE CO₂
               </div>
-              <div className="text-2xl font-black text-slate-100 mt-0.5">
-                {routeResult ? `${routeResult.total_co2_kg} kg` : '--'}
+              <div className="text-2xl font-black text-slate-100 mt-1">
+                {routeResult ? `${routeResult.total_co2_kg} kg` : '186.41 kg'}
               </div>
-              <div className="text-[10px] text-emerald-300 font-medium mt-0.5 flex items-center gap-1">
+              <div className="text-[10px] text-emerald-400 font-medium mt-1 flex items-center gap-1">
                 <span>🌲 ≈ {co2SavedKg > 0 ? (co2SavedKg / 21).toFixed(1) : '0'} trees/yr absorbed</span>
               </div>
             </div>
             <button
               onClick={() => setShowExplainer(true)}
-              className="p-2 rounded-xl bg-[#111827] hover:bg-[#1F2937] text-slate-400 hover:text-emerald-400 border border-slate-800 transition-colors"
+              className="w-10 h-10 rounded-xl bg-slate-800/60 hover:bg-slate-700/80 text-slate-400 hover:text-emerald-400 border border-slate-700/60 flex items-center justify-center transition-colors cursor-pointer"
               title="How we calculated emissions"
             >
               <Calculator className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          {/* Card 3: Travel Time & Distance */}
+          <div className="p-4 rounded-2xl border border-slate-800 bg-[#121722] flex items-center justify-between shadow-lg">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Travel Time & Distance
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                TRAVEL TIME & DISTANCE
               </div>
-              <div className="text-2xl font-black text-amber-400 flex items-center gap-1 mt-0.5">
+              <div className="text-2xl font-black text-amber-400 flex items-center gap-1 mt-1">
                 <Clock className="w-5 h-5" />
-                {routeResult ? `${routeResult.total_time_min} min` : '--'}
+                {routeResult ? `${routeResult.total_time_min} min` : '209.1 min'}
               </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">
-                Distance: {routeResult ? `${routeResult.total_distance_km} km` : '--'}
+              <div className="text-[10px] text-slate-400 mt-1">
+                Distance: {routeResult ? `${routeResult.total_distance_km} km` : '166.99 km'}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Zap className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          {/* Card 4: Empty Trip Opportunity */}
+          <div className="p-4 rounded-2xl border border-slate-800 bg-[#121722] flex items-center justify-between shadow-lg">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Empty Trip Opportunity
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                EMPTY TRIP OPPORTUNITY
               </div>
-              <div className="text-sm font-extrabold text-slate-100 mt-1 flex items-center gap-1.5">
+              <div className="text-sm font-black text-slate-100 mt-1 flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-emerald-400" />
                 Return Leg Matching
               </div>
@@ -276,14 +278,14 @@ export default function App() {
                 Cross-Company Load Pooling
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <ShieldCheck className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        {/* Level 2 Result Comparison Card (Req #3) */}
-        <div className="glass-panel p-5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/30 via-slate-900/90 to-slate-950/90 shadow-xl">
+        {/* Level 2 Result Comparison Card (Figma Screenshot 2) */}
+        <div className="p-5 rounded-2xl border border-emerald-500/30 bg-[#0E1420] shadow-xl">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/40">
@@ -294,53 +296,53 @@ export default function App() {
               </h3>
             </div>
             <div className="text-right">
-              <div className="text-[10px] uppercase font-bold text-slate-400">CO₂ Reduction</div>
+              <div className="text-[10px] uppercase font-extrabold text-slate-400">CO₂ REDUCTION</div>
               <div className="text-3xl font-black text-emerald-400">
-                {routeResult ? `-${routeResult.co2_saved_pct}%` : '0%'}
+                {routeResult ? `-${routeResult.co2_saved_pct}%` : '-0%'}
               </div>
             </div>
           </div>
 
           {/* Side-by-Side Route Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-[#181A20]/80 border border-amber-500/30 text-xs space-y-2">
-              <div className="font-bold text-amber-400 flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <div className="p-4 rounded-xl bg-[#121722] border border-amber-500/30 text-xs space-y-2">
+              <div className="font-bold text-amber-400 flex items-center justify-between border-b border-slate-800 pb-2">
                 <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> Standard Route</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">Time-Only Baseline</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-bold">Time-Only Baseline</span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center pt-1">
                 <div>
                   <div className="text-[10px] text-slate-400">Distance</div>
-                  <div className="font-bold text-slate-200">{routeResult ? `${routeResult.baseline_distance_km || routeResult.total_distance_km} km` : '--'}</div>
+                  <div className="font-bold text-slate-200 text-sm">{routeResult ? `${routeResult.baseline_distance_km || routeResult.total_distance_km} km` : '166.99 km'}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400">Travel Time</div>
-                  <div className="font-bold text-slate-200">{routeResult ? `${routeResult.total_time_min} min` : '--'}</div>
+                  <div className="font-bold text-slate-200 text-sm">{routeResult ? `${routeResult.total_time_min} min` : '209.1 min'}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400">CO₂ Output</div>
-                  <div className="font-bold text-amber-400">{routeResult ? `${routeResult.baseline_co2_kg} kg` : '--'}</div>
+                  <div className="font-bold text-amber-400 text-sm">{routeResult ? `${routeResult.baseline_co2_kg} kg` : '186.41 kg'}</div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs space-y-2">
-              <div className="font-bold text-emerald-400 flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+            <div className="p-4 rounded-xl bg-[#0D2E24]/60 border border-emerald-500/40 text-xs space-y-2">
+              <div className="font-bold text-emerald-400 flex items-center justify-between border-b border-emerald-500/20 pb-2">
                 <span className="flex items-center gap-1.5"><Leaf className="w-4 h-4 text-emerald-400" /> EcoLogix Greener Route</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">Carbon-Aware</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">Carbon-Aware</span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center pt-1">
                 <div>
                   <div className="text-[10px] text-slate-400">Distance</div>
-                  <div className="font-bold text-slate-100">{routeResult ? `${routeResult.total_distance_km} km` : '--'}</div>
+                  <div className="font-bold text-slate-100 text-sm">{routeResult ? `${routeResult.total_distance_km} km` : '166.99 km'}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400">Travel Time</div>
-                  <div className="font-bold text-amber-300">{routeResult ? `${routeResult.total_time_min} min` : '--'}</div>
+                  <div className="font-bold text-amber-300 text-sm">{routeResult ? `${routeResult.total_time_min} min` : '209.1 min'}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-400">CO₂ Output</div>
-                  <div className="font-bold text-emerald-400">{routeResult ? `${routeResult.total_co2_kg} kg` : '--'}</div>
+                  <div className="font-bold text-emerald-400 text-sm">{routeResult ? `${routeResult.total_co2_kg} kg` : '186.41 kg'}</div>
                 </div>
               </div>
             </div>
@@ -349,9 +351,9 @@ export default function App() {
 
         {/* Dashboard Core: Left Controls + Right Map & Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Primary 3-Step Workflow Controls (4 cols, Req #2) */}
-          <div id="route-optimizer" className="lg:col-span-4 space-y-5 scroll-mt-20 md:scroll-mt-24">
-            <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-4">
+          {/* Left Column: Primary 3-Step Workflow Controls (4 cols) */}
+          <div id="route-optimizer" className="lg:col-span-4 space-y-5 scroll-mt-24">
+            <div className="bg-[#121722] p-4 rounded-2xl border border-slate-800 space-y-4">
               <div className="border-b border-slate-800 pb-2">
                 <h3 className="text-sm font-extrabold text-slate-100 flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-emerald-400" /> Primary Route Planner
@@ -382,8 +384,8 @@ export default function App() {
                         }}
                         className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                           selectedVehicle?.id === v.id
-                            ? 'bg-emerald-500/15 border-emerald-500/50 text-slate-100 font-semibold shadow-md shadow-emerald-500/10'
-                            : 'bg-[#111827]/60 border-slate-800 text-slate-400 hover:bg-[#1F2937]'
+                            ? 'bg-[#0D4434] border-emerald-500/50 text-slate-100 font-semibold shadow-md shadow-emerald-500/10'
+                            : 'bg-[#181E2B] border-slate-800 text-slate-400 hover:bg-[#1E2638]'
                         }`}
                       >
                         <div>
@@ -420,8 +422,8 @@ export default function App() {
                           key={s.id}
                           className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer text-xs transition-all ${
                             isChecked
-                              ? 'bg-[#111827] border-slate-700 text-slate-200'
-                              : 'bg-[#181A20]/40 border-slate-900 text-slate-500 opacity-60'
+                              ? 'bg-[#181E2B] border-slate-700 text-slate-200'
+                              : 'bg-[#121722]/60 border-slate-900 text-slate-500 opacity-60'
                           }`}
                         >
                           <input
@@ -453,7 +455,7 @@ export default function App() {
                 <button
                   onClick={() => selectedVehicle && runOptimization(selectedVehicle.id, selectedShipmentIds, alpha)}
                   disabled={isOptimizing || !selectedVehicle || selectedShipmentIds.length === 0}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 rounded-xl bg-[#10B981] hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isOptimizing ? (
                     <>
@@ -477,46 +479,28 @@ export default function App() {
               onOptimize={() => selectedVehicle && runOptimization(selectedVehicle.id, selectedShipmentIds, alpha)}
               isOptimizing={isOptimizing}
             />
-
           </div>
 
           {/* Right Column: Map & Results (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Interactive Route Map (Req #4) */}
-            <div id="map-view" className="scroll-mt-20 md:scroll-mt-24 relative space-y-4">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => routeResult && setRouteCategory('faster')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
-                    routeCategory === 'faster'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
-                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  Faster Route (Time-Optimized)
-                </button>
-                <button
-                  onClick={() => routeResult && setRouteCategory('greener')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
-                    routeCategory === 'greener'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
-                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  Greener Route (Carbon-Aware)
-                </button>
-              </div>
-              <MapView routeResult={activeRouteResult} depot={depot} />
+            {/* Interactive Route Map */}
+            <div id="map-view" className="scroll-mt-24 space-y-4">
+              <MapView 
+                routeResult={activeRouteResult} 
+                depot={depot} 
+                routeCategory={routeCategory}
+                setRouteCategory={setRouteCategory}
+              />
             </div>
 
             {/* EV Fleet Scenario */}
-            <div id="ev-comparison" className="scroll-mt-20 md:scroll-mt-24">
+            <div id="ev-comparison" className="scroll-mt-24">
               <EVComparisonCard routeResult={routeResult} />
             </div>
 
-            {/* Route Sequence Table (Expandable / Technical) */}
+            {/* Route Sequence Table */}
             {routeResult && routeResult.legs && (
-              <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
+              <div className="bg-[#121722] p-4 rounded-2xl border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-extrabold text-slate-100 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-emerald-400" /> Route Leg Breakdown
@@ -530,7 +514,7 @@ export default function App() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left text-slate-300">
-                    <thead className="bg-[#111827]/80 text-slate-400 uppercase text-[10px] tracking-wider">
+                    <thead className="bg-[#181E2B] text-slate-400 uppercase text-[10px] tracking-wider">
                       <tr>
                         <th className="px-3 py-2">Leg #</th>
                         <th className="px-3 py-2">From</th>
@@ -543,7 +527,7 @@ export default function App() {
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
                       {routeResult.legs.map((leg) => (
-                        <tr key={leg.sequence_order} className="hover:bg-[#111827]/40">
+                        <tr key={leg.sequence_order} className="hover:bg-[#181E2B]/50">
                           <td className="px-3 py-2 font-mono font-bold text-emerald-400">
                             #{leg.sequence_order}
                           </td>
@@ -576,20 +560,20 @@ export default function App() {
             )}
 
             {/* Load Pooling Opportunity */}
-            <div id="load-pool" className="scroll-mt-20 md:scroll-mt-24">
+            <div id="load-pool" className="scroll-mt-24">
               <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
             </div>
 
             {/* Aggregate Impact Summary */}
-            <div id="impact-summary" className="scroll-mt-20 md:scroll-mt-24">
+            <div id="impact-summary" className="scroll-mt-24">
               <ImpactSummaryPanel impactSummary={impactSummary} />
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="glass-panel border-t border-slate-800 py-4 px-6 mt-8 mb-16 md:mb-20 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
+      {/* Footer (Figma Screenshots 1 & 2) */}
+      <footer className="bg-[#0B0E14] border-t border-slate-800/80 py-4 px-6 mb-20 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto w-full">
         <div>
           <strong>EcoLogix Engine</strong> — Built with ❤️ by CodeCraft
         </div>
@@ -602,7 +586,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Fixed Bottom Navigation Bar */}
+      {/* Floating Bottom Pill Navigation Bar (Figma Screenshots 1 & 2) */}
       <NavBar />
 
       {/* Modals & Walkthrough */}

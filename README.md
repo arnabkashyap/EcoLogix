@@ -1,6 +1,6 @@
 # EcoLogix — Multimodal Carbon-Aware Logistics & Route Intelligence Platform
 
-> **"EcoLogix cuts fleet CO₂ without cutting delivery speed — and finds free capacity other companies are already wasting."**
+> **"EcoLogix cuts fleet CO₂ without cutting delivery speed — and finds free capacity other companies are already wasting."**[![Release Build](https://github.com/arnabkashyap/EcoLogix/actions/workflows/release.yml/badge.svg)](https://github.com/arnabkashyap/EcoLogix/actions/workflows/release.yml)
 
 EcoLogix is an enterprise-grade logistics intelligence platform that unifies **GLEC-compliant carbon accounting**, real-time **bi-objective ($\alpha$-weighted) combinatorial route optimization**, **cross-provider load pooling**, and **weather hazard telemetry** into an interactive web dashboard and mobile in-cab driver portal.
 
@@ -101,4 +101,4 @@ For full keystore generation, release signing, and CI/CD automation instructions
 
 The repository is pre-configured for automated deployment on **Vercel**:
 - `vercel.json` coordinates building the frontend React application and rewriting `/api/(.*)` requests to `api/index.py` (FastAPI Serverless Handler).
-- Automatic CI builds compile on push to `main`.
+- Automatic CI builds compile on push to `main`.

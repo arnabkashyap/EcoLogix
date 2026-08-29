@@ -9,16 +9,16 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { id: 'impact-summary', label: 'Impact Summary', icon: BarChart3 },
   { id: 'route-optimizer', label: 'Route Optimizer', icon: Sliders },
   { id: 'pareto-chart', label: 'Best Route Options', icon: TrendingDown },
   { id: 'map-view', label: 'Route Map', icon: MapPin },
   { id: 'ev-comparison', label: 'EV Comparison', icon: Zap },
   { id: 'load-pool', label: 'Combine Shipments', icon: Layers },
+  { id: 'impact-summary', label: 'Impact Summary', icon: BarChart3 },
 ];
 
 export function NavBar() {
-  const [activeSection, setActiveSection] = useState('impact-summary');
+  const [activeSection, setActiveSection] = useState('route-optimizer');
   const activeTabRef = useRef(null);
 
   useEffect(() => {

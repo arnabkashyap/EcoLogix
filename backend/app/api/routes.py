@@ -4,7 +4,7 @@ Route Optimization Router — /api/v1/routes/optimize & /api/v1/routes/pareto
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -70,7 +70,7 @@ def process_optimization_job(job_id: str):
 
         job.status = "completed"
         job.result_json = json.dumps(opt_res)
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         db.commit()
 
     except Exception as e:

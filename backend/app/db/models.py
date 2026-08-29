@@ -3,7 +3,7 @@ SQLAlchemy ORM Models for EcoLogix.
 Every domain table contains `tenant_id` to enforce multi-tenant isolation.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from sqlalchemy import (
     Column,
@@ -27,7 +27,7 @@ class Organization(Base):
     depot_city = Column(String, nullable=False)
     depot_lat = Column(Float, nullable=False)
     depot_lng = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class User(Base):
@@ -101,7 +101,7 @@ class Route(Base):
     baseline_co2_kg = Column(Float, nullable=False)
     co2_saved_pct = Column(Float, nullable=False)
     solution_quality = Column(String, default="optimal")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     legs = relationship("RouteLeg", back_populates="route", cascade="all, delete-orphan")
 
@@ -146,7 +146,7 @@ class LoadPoolMatch(Base):
     co2_saved_kg = Column(Float, nullable=False)
     cost_saved_usd = Column(Float, nullable=False)
     match_score = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class OptimizationJob(Base):
@@ -160,5 +160,5 @@ class OptimizationJob(Base):
     alpha = Column(Float, nullable=False, default=0.5)
     result_json = Column(Text, nullable=True)
     error = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime, nullable=True)

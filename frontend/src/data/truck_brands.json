@@ -1,0 +1,11 @@
+{
+  "trucks": [
+    { "brand": "Volvo", "load_capacity_kg": 24000, "mileage_kmpl": 2.8 },
+    { "brand": "Mahindra", "load_capacity_kg": 8400, "mileage_kmpl": 4.6 },
+    { "brand": "BharatBenz", "load_capacity_kg": 16500, "mileage_kmpl": 3.4 },
+    { "brand": "Eicher", "load_capacity_kg": 4900, "mileage_kmpl": 5.8 },
+    { "brand": "Tata", "load_capacity_kg": 7300, "mileage_kmpl": 5.2 },
+    { "brand": "Ashok Leyland", "load_capacity_kg": 11500, "mileage_kmpl": 4.1 },
+    { "brand": "EcoLogix EV", "load_capacity_kg": 2500, "mileage_kmpl": 1.2 }
+  ]
+}

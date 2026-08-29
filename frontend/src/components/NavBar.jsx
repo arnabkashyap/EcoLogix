@@ -27,8 +27,8 @@ export function NavBar({ activeTab, onSelectTab }) {
   };
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <nav className="pointer-events-auto bg-[#121722]/95 backdrop-blur-2xl border border-slate-700/60 rounded-full px-2 py-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.8)] flex items-center space-x-1.5 overflow-x-auto no-scrollbar max-w-full">
+    <div className="fixed bottom-5 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+      <nav className="pointer-events-auto liquid-glass-dock rounded-full px-2.5 py-2 flex items-center space-x-2 overflow-x-auto no-scrollbar max-w-full">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -36,13 +36,13 @@ export function NavBar({ activeTab, onSelectTab }) {
             <button
               key={item.id}
               onClick={() => handleTabClick(item.id)}
-              className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all duration-200 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all duration-300 cursor-pointer ${
                 isActive
-                  ? 'bg-[#0D4434] text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)] font-bold'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                  ? 'liquid-glass-item-active text-emerald-200 font-extrabold scale-[1.03]'
+                  : 'liquid-glass-item-inactive text-slate-300 hover:text-white'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-300 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'text-slate-400'}`} />
               <span>{item.label}</span>
             </button>
           );

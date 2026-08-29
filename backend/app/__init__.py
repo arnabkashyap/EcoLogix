@@ -1,0 +1,1 @@
+"""EcoLogix Backend App Package"""

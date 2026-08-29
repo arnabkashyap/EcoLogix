@@ -493,29 +493,12 @@ export default function AdminDashboard() {
           <div className="lg:col-span-8 space-y-6">
             {/* Interactive Route Map (Req #4) */}
             <div id="map-view" className="scroll-mt-20 md:scroll-mt-24 relative space-y-4">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => routeResult && setRouteCategory('faster')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
-                    routeCategory === 'faster'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
-                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  Faster Route (Time-Optimized)
-                </button>
-                <button
-                  onClick={() => routeResult && setRouteCategory('greener')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
-                    routeCategory === 'greener'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
-                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  Greener Route (Carbon-Aware)
-                </button>
-              </div>
-              <MapView routeResult={activeRouteResult} depot={depot} />
+              <MapView 
+                routeResult={activeRouteResult} 
+                depot={depot} 
+                routeCategory={routeCategory}
+                setRouteCategory={setRouteCategory}
+              />
             </div>
 
             {/* EV Fleet Scenario */}

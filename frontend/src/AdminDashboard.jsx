@@ -510,31 +510,12 @@ export default function AdminDashboard() {
           <div className="lg:col-span-8 space-y-6">
             {/* Interactive Route Map (Req #4) */}
             <div id="map-view" className="scroll-mt-20 md:scroll-mt-24 relative space-y-4">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSelectRouteCategory('faster')}
-                  className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm ${
-                    routeCategory === 'faster'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-[0_0_12px_rgba(16,185,129,0.35)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-300 hover:bg-[#1F2937] hover:border-slate-600'
-                  }`}
-                >
-                  Faster Route (Time-Optimized)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectRouteCategory('greener')}
-                  className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm ${
-                    routeCategory === 'greener'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-[0_0_12px_rgba(16,185,129,0.35)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-300 hover:bg-[#1F2937] hover:border-slate-600'
-                  }`}
-                >
-                  Greener Route (Carbon-Aware)
-                </button>
-              </div>
-              <MapView routeResult={activeRouteResult} depot={depot} />
+              <MapView 
+                routeResult={activeRouteResult} 
+                depot={depot} 
+                routeCategory={routeCategory}
+                setRouteCategory={handleSelectRouteCategory}
+              />
             </div>
 
             {/* EV Fleet Scenario */}

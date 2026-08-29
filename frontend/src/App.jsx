@@ -174,7 +174,7 @@ export default function App() {
   }, [routeResult, routeCategory]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#181A20] text-slate-100 flex flex-col font-sans">
       {/* Header Navigation */}
       <Header onOpenDemoGuide={() => setShowDemoGuide(true)} />
 
@@ -238,7 +238,7 @@ export default function App() {
             </div>
             <button
               onClick={() => setShowExplainer(true)}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 border border-slate-800 transition-colors"
+              className="p-2 rounded-xl bg-[#111827] hover:bg-[#1F2937] text-slate-400 hover:text-emerald-400 border border-slate-800 transition-colors"
               title="How we calculated emissions"
             >
               <Calculator className="w-5 h-5" />
@@ -303,7 +303,7 @@ export default function App() {
 
           {/* Side-by-Side Route Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-amber-500/30 text-xs space-y-2">
+            <div className="p-4 rounded-xl bg-[#181A20]/80 border border-amber-500/30 text-xs space-y-2">
               <div className="font-bold text-amber-400 flex items-center justify-between border-b border-slate-800 pb-1.5">
                 <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> Standard Route</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">Time-Only Baseline</span>
@@ -366,7 +366,7 @@ export default function App() {
                   Select Fleet Vehicle:
                 </div>
                 {vehicles.length === 0 ? (
-                  <div className="text-xs text-slate-400 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                  <div className="text-xs text-slate-400 p-3 rounded-xl bg-[#111827] border border-slate-800 text-center">
                     Select a vehicle to start optimizing.
                   </div>
                 ) : (
@@ -383,7 +383,7 @@ export default function App() {
                         className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                           selectedVehicle?.id === v.id
                             ? 'bg-emerald-500/15 border-emerald-500/50 text-slate-100 font-semibold shadow-md shadow-emerald-500/10'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800'
+                            : 'bg-[#111827]/60 border-slate-800 text-slate-400 hover:bg-[#1F2937]'
                         }`}
                       >
                         <div>
@@ -408,7 +408,7 @@ export default function App() {
                   Select Shipments ({selectedShipmentIds.length}/{shipments.length}):
                 </div>
                 {shipments.length === 0 ? (
-                  <div className="text-xs text-slate-400 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                  <div className="text-xs text-slate-400 p-3 rounded-xl bg-[#111827] border border-slate-800 text-center">
                     Choose at least one shipment to create a route.
                   </div>
                 ) : (
@@ -420,15 +420,15 @@ export default function App() {
                           key={s.id}
                           className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer text-xs transition-all ${
                             isChecked
-                              ? 'bg-slate-900 border-slate-700 text-slate-200'
-                              : 'bg-slate-950/40 border-slate-900 text-slate-500 opacity-60'
+                              ? 'bg-[#111827] border-slate-700 text-slate-200'
+                              : 'bg-[#181A20]/40 border-slate-900 text-slate-500 opacity-60'
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => handleShipmentToggle(s.id)}
-                            className="mt-0.5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-0 accent-emerald-500"
+                            className="mt-0.5 rounded border-slate-700 bg-[#111827] text-emerald-500 focus:ring-0 accent-emerald-500"
                           />
                           <div className="flex-1">
                             <div className="font-bold text-slate-200">{s.title}</div>
@@ -463,7 +463,7 @@ export default function App() {
                   ) : (
                     <>
                       <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
-                      ⚡ Optimize Route
+                      Optimize Route
                     </>
                   )}
                 </button>
@@ -499,7 +499,7 @@ export default function App() {
                   className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
                     routeCategory === 'faster'
                       ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800'
+                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
                   } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Faster Route (Time-Optimized)
@@ -509,7 +509,7 @@ export default function App() {
                   className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
                     routeCategory === 'greener'
                       ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800'
+                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
                   } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Greener Route (Carbon-Aware)
@@ -539,7 +539,7 @@ export default function App() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left text-slate-300">
-                    <thead className="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider">
+                    <thead className="bg-[#111827]/80 text-slate-400 uppercase text-[10px] tracking-wider">
                       <tr>
                         <th className="px-3 py-2">Leg #</th>
                         <th className="px-3 py-2">From</th>
@@ -552,7 +552,7 @@ export default function App() {
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
                       {routeResult.legs.map((leg) => (
-                        <tr key={leg.sequence_order} className="hover:bg-slate-900/40">
+                        <tr key={leg.sequence_order} className="hover:bg-[#111827]/40">
                           <td className="px-3 py-2 font-mono font-bold text-emerald-400">
                             #{leg.sequence_order}
                           </td>

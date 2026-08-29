@@ -58,36 +58,21 @@ export function LoadPoolPanel({ onMatchTriggered }) {
         </button>
       </div>
 
-      {/* 3-Step Plain Language Visual Diagram (Req #7) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs mb-4">
-        <div className="flex items-center gap-2.5">
-          <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 border border-emerald-500/30 text-[11px]">1</span>
-          <span className="text-slate-300 font-medium">Your truck has an empty return trip</span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center shrink-0 border border-teal-500/30 text-[11px]">2</span>
-          <span className="text-slate-300 font-medium">Another provider has cargo along this route</span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0 border border-amber-500/30 text-[11px]">3</span>
-          <span className="text-slate-300 font-medium">Combine trips & eliminate unnecessary vehicle journeys</span>
-        </div>
-      </div>
 
       {/* Privacy Guarantee Banner */}
-      <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs mb-4">
+      <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#111827]/60 border border-slate-800/80 text-xs mb-4">
         <div className="flex items-center gap-2 text-slate-400 text-[11px]">
           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>Your company data stays isolated — only shared route opportunities are matched.</span>
         </div>
-        <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-emerald-400 border border-slate-700 font-mono shrink-0">
+        <span className="px-2 py-0.5 rounded bg-[#1F2937] text-[10px] text-emerald-400 border border-slate-700 font-mono shrink-0">
           JWT Isolated
         </span>
       </div>
 
       {/* Empty State */}
       {!hasRun && (
-        <div className="p-8 text-center border-2 border-dashed border-slate-800/80 rounded-xl bg-slate-950/40">
+        <div className="p-8 text-center border-2 border-dashed border-slate-800/80 rounded-xl bg-[#181A20]/40">
           <Layers className="w-8 h-8 text-slate-600 mx-auto mb-2" />
           <div className="text-xs font-semibold text-slate-300">Ready to discover empty-trip opportunities</div>
           <div className="text-[11px] text-slate-500 mt-1 max-w-md mx-auto">
@@ -97,7 +82,7 @@ export function LoadPoolPanel({ onMatchTriggered }) {
       )}
 
       {hasRun && matches.length === 0 && (
-        <div className="p-6 text-center text-xs text-slate-400 bg-slate-950/40 border border-slate-800 rounded-xl">
+        <div className="p-6 text-center text-xs text-slate-400 bg-[#181A20]/40 border border-slate-800 rounded-xl">
           No compatible empty-trip opportunities found right now. Check back when new shipment routes are posted.
         </div>
       )}
@@ -120,7 +105,7 @@ export function LoadPoolPanel({ onMatchTriggered }) {
               </div>
 
               {/* Prominent Impact Statement */}
-              <div className="p-3 rounded-lg bg-slate-950/90 border border-emerald-500/30 text-xs font-medium text-slate-200 leading-relaxed mb-3">
+              <div className="p-3 rounded-lg bg-[#181A20]/90 border border-emerald-500/30 text-xs font-medium text-slate-200 leading-relaxed mb-3">
                 Partnering with <strong className="text-emerald-400 font-bold">{match.carrier_b_name}</strong> avoids an extra truck run — saving <strong className="text-emerald-400 font-bold">{match.co2_saved_kg} kg CO₂</strong> and <strong className="text-amber-300 font-bold">${match.cost_saved_usd}</strong>.
               </div>
 
@@ -135,10 +120,10 @@ export function LoadPoolPanel({ onMatchTriggered }) {
             {/* Impact Metric Chips & CTA */}
             <div className="border-t border-slate-800/80 pt-3 flex items-center justify-between">
               <div className="flex items-center gap-2 text-[10px]">
-                <span className="px-2 py-1 rounded bg-slate-900 text-emerald-300 font-bold border border-slate-800">
+                <span className="px-2 py-1 rounded bg-[#111827] text-emerald-300 font-bold border border-slate-800">
                   -{match.co2_saved_kg} kg CO₂
                 </span>
-                <span className="px-2 py-1 rounded bg-slate-900 text-amber-300 font-bold border border-slate-800">
+                <span className="px-2 py-1 rounded bg-[#111827] text-amber-300 font-bold border border-slate-800">
                   -${match.cost_saved_usd} Cost
                 </span>
               </div>
@@ -153,7 +138,7 @@ export function LoadPoolPanel({ onMatchTriggered }) {
             </div>
 
             {selectedMatch === match.id && (
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-700 text-[11px] text-slate-300 space-y-1 animate-in fade-in">
+              <div className="p-3 rounded-lg bg-[#111827] border border-slate-700 text-[11px] text-slate-300 space-y-1 animate-in fade-in">
                 <div className="font-bold text-emerald-400">Match Details Verified</div>
                 <div>Carrier Partner: <span className="font-semibold text-slate-100">{match.carrier_b_name}</span></div>
                 <div>Corridor: <span className="font-mono text-slate-200">{match.origin_name} → {match.dest_name}</span></div>

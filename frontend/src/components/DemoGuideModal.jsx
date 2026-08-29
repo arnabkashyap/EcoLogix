@@ -5,11 +5,11 @@ export function DemoGuideModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] bg-[#181A20]/80 backdrop-blur-md flex items-center justify-center p-4">
       <div className="glass-panel w-full max-w-xl rounded-2xl border border-emerald-500/30 p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+          className="absolute top-4 right-4 p-1.5 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-slate-400 hover:text-slate-200"
         >
           <X className="w-5 h-5" />
         </button>
@@ -25,7 +25,7 @@ export function DemoGuideModal({ isOpen, onClose }) {
         </div>
 
         <div className="space-y-3 mb-5 text-xs">
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">1</div>
             <div>
               <div className="font-bold text-slate-200">Start on Company A (Northwind Logistics)</div>
@@ -33,7 +33,7 @@ export function DemoGuideModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">2</div>
             <div>
               <div className="font-bold text-slate-200">Switch to Company B (Apex Freight)</div>
@@ -41,7 +41,7 @@ export function DemoGuideModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">3</div>
             <div>
               <div className="font-bold text-slate-200">Click "Optimize Fleet Route"</div>
@@ -49,7 +49,7 @@ export function DemoGuideModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">4</div>
             <div>
               <div className="font-bold text-slate-200">Show Map & CO₂ Saved Number</div>
@@ -57,7 +57,7 @@ export function DemoGuideModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">5</div>
             <div>
               <div className="font-bold text-slate-200">Move the α Slider</div>
@@ -65,7 +65,7 @@ export function DemoGuideModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-start gap-3">
             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">6</div>
             <div>
               <div className="font-bold text-slate-200">Trigger Cross-Company Combine Shipments Match</div>

@@ -41,7 +41,7 @@ export function AlphaSlider({ alpha, onChangeAlpha, onOptimize, isOptimizing }) 
           step="0.25"
           value={alpha}
           onChange={(e) => onChangeAlpha(parseFloat(e.target.value))}
-          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+          className="w-full h-2 bg-[#1F2937] rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
         />
         <div className="flex items-center text-xs text-amber-400 font-bold gap-1 min-w-[70px] justify-end">
           ⚡ Faster <Zap className="w-4 h-4" />
@@ -57,7 +57,7 @@ export function AlphaSlider({ alpha, onChangeAlpha, onOptimize, isOptimizing }) 
             className={`py-1.5 rounded-lg text-[10px] font-semibold border transition-all cursor-pointer ${
               alpha === val
                 ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow-md shadow-emerald-500/20'
-                : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                : 'bg-[#111827]/90 text-slate-400 border-slate-800 hover:bg-[#1F2937] hover:text-slate-200'
             }`}
           >
             {getModeLabel(val).split(' ')[0]}

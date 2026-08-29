@@ -41,7 +41,7 @@ export function ImpactSummaryPanel({ impactSummary }) {
       {/* Main Headline Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Large Headline Metric: Combined CO2 Saved */}
-        <div className="md:col-span-2 bg-slate-950/80 p-4 rounded-xl border border-emerald-500/30 flex flex-col justify-between relative overflow-hidden">
+        <div className="md:col-span-2 bg-[#181A20]/80 p-4 rounded-xl border border-emerald-500/30 flex flex-col justify-between relative overflow-hidden">
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
             <span className="uppercase tracking-wider font-semibold text-emerald-400/90 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Total CO₂ Avoided
@@ -63,7 +63,7 @@ export function ImpactSummaryPanel({ impactSummary }) {
         </div>
 
         {/* Equivalency Card: Trees Planted */}
-        <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+        <div className="bg-[#181A20]/80 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
           <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
             <Trees className="w-4 h-4 text-emerald-400" /> Environmental Equiv.
           </div>
@@ -83,7 +83,7 @@ export function ImpactSummaryPanel({ impactSummary }) {
         </div>
 
         {/* Breakdown Card: Route & Pooling Totals */}
-        <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2 text-xs">
+        <div className="bg-[#181A20]/80 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2 text-xs">
           <div className="flex items-center justify-between pb-1 border-b border-slate-800">
             <div className="flex items-center gap-1 text-slate-300">
               <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />

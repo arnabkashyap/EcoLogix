@@ -259,7 +259,7 @@ export function MapView({ routeResult, depot }) {
         <div className="flex flex-col gap-2">
           <button
             onClick={handleRecenter}
-            className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
+            className="px-3 py-2 rounded-xl bg-[#111827]/90 hover:bg-[#1F2937] text-slate-300 hover:text-emerald-400 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
             title="Recenter on my live location"
           >
             <Crosshair className="w-4 h-4 text-emerald-400" />
@@ -357,7 +357,7 @@ export function MapView({ routeResult, depot }) {
             center={[zone.lat, zone.lng]}
             radius={zone.radius_m}
             pathOptions={{
-              fillColor: zone.level === 'heavy' ? '#ef4444' : '#22c55e',
+              fillColor: zone.level === 'heavy' ? '#ef4444' : '#10B981',
               fillOpacity: zone.level === 'heavy' ? 0.5 : 0.25,
               color: 'transparent' // visual only
             }}

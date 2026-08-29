@@ -1,8 +1,8 @@
 /* Custom Styling Tokens for EcoLogix */
 :root {
-  --bg-slate-950: #030712;
-  --bg-slate-900: #0f172a;
-  --bg-slate-800: #1e293b;
+  --bg-[#181A20]: #181A20;
+  --bg-[#111827]: #0f172a;
+  --bg-[#1F2937]: #1e293b;
   --accent-emerald: #10b981;
   --accent-emerald-glow: rgba(16, 185, 129, 0.25);
   --accent-rose: #f43f5e;
@@ -14,7 +14,7 @@ html {
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #030712;
+  background-color: #181A20;
   color: #f3f4f6;
   margin: 0;
   padding: 0;
@@ -36,7 +36,7 @@ body {
 
 /* Glassmorphism Card Style */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(17, 24, 39, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -52,7 +52,7 @@ body {
 
 /* Leaflet Map Dark Tile Override */
 .leaflet-container {
-  background-color: #0b1329 !important;
+  background-color: #181A20 !important;
   font-family: 'Inter', sans-serif !important;
 }
 
@@ -71,7 +71,7 @@ input[type=range] {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #181A20;
 }
 ::-webkit-scrollbar-thumb {
   background: #1f293d;

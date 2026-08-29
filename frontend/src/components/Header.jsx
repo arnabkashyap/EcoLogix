@@ -20,7 +20,7 @@ export function Header({ onOpenDemoGuide }) {
             <h1 className="text-xl font-bold text-slate-100 tracking-tight">Eco<span className="text-emerald-400">Logix</span></h1>
           </div>
           <p className="text-xs text-slate-400 font-medium hidden md:block">
-            Multimodal Route & Carbon-Aware Logistics Engine
+            Multiple Transport Types Route & Eco-Friendly Goods Transportation Engine
           </p>
         </div>
       </div>

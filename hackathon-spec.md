@@ -28,7 +28,7 @@ A judge must be able to watch, unprompted, in under 4 minutes:
 - [ ] Log in as two different companies (even via mock login) and see each one's data is separate — no shared fleet/shipment list
 - [ ] Add or select a fleet + shipments for Company A, hit "Optimize"
 - [ ] Watch a route appear on a map within ~15 seconds, with a CO₂-saved number vs. a time-only baseline
-- [ ] Move the α slider and see the route/Pareto chart respond (even if it re-queues a new job rather than being instant)
+- [ ] Move the α slider and see the route/best route options chart respond (even if it re-queues a new job rather than being instant)
 - [ ] Trigger a load-pool match between Company A and Company B, see a matched empty leg + shipment with CO₂/cost saved, and confirm Company B's other data is *not* visible to Company A
 - [ ] The whole thing runs on a real deployed URL, not `localhost`
 

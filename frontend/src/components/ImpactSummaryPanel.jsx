@@ -26,7 +26,7 @@ export function ImpactSummaryPanel({ impactSummary }) {
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5 text-emerald-400" />
             <h2 className="text-base font-bold text-slate-100 tracking-wide">
-              Cumulative ESG Impact Summary
+              Overall Sustainability Impact
             </h2>
             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/30 font-mono">
               Live Tenant KPI
@@ -46,7 +46,7 @@ export function ImpactSummaryPanel({ impactSummary }) {
             <span className="uppercase tracking-wider font-semibold text-emerald-400/90 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Total CO₂ Avoided
             </span>
-            <span className="text-[10px] font-mono text-slate-500">Route + Pooling</span>
+            <span className="text-[10px] font-mono text-slate-500">Route + Combined</span>
           </div>
 
           <div className="my-1 flex items-baseline gap-2">
@@ -97,7 +97,7 @@ export function ImpactSummaryPanel({ impactSummary }) {
           <div className="flex items-center justify-between pt-0.5">
             <div className="flex items-center gap-1 text-slate-300">
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span>Load Pooling ({total_load_pool_matches})</span>
+              <span>Combine Shipments ({total_load_pool_matches})</span>
             </div>
             <span className="font-bold text-amber-400 font-mono">
               -{total_co2_saved_from_pooling_kg} kg

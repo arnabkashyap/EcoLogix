@@ -48,7 +48,7 @@ export function ParetoChart({ paretoPoints, currentAlpha, onSelectAlpha, solutio
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-              <TrendingDown className="w-4 h-4 text-emerald-400" /> Pareto Frontier (Time vs CO₂)
+              <TrendingDown className="w-4 h-4 text-emerald-400" /> Best Route Options (Time vs CO₂)
             </h3>
             {solutionMethod && (
               <span

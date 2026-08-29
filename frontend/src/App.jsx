@@ -186,7 +186,7 @@ export default function App() {
           </h2>
         </div>
 
-        {/* Cumulative ESG Impact Summary Headline Panel (Task 3) */}
+        {/* Overall Sustainability Impact Headline Panel (Task 3) */}
         <div id="impact-summary" className="scroll-mt-28 md:scroll-mt-32">
           <ImpactSummaryPanel impactSummary={impactSummary} />
         </div>
@@ -356,7 +356,7 @@ export default function App() {
               isOptimizing={isOptimizing}
             />
 
-            {/* Pareto Frontier Chart */}
+            {/* Best Route Options Chart */}
             <div id="pareto-chart" className="scroll-mt-28 md:scroll-mt-32">
               <ParetoChart
                 paretoPoints={paretoPoints}
@@ -440,7 +440,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Cross-Tenant Load Pooling Engine Section */}
+            {/* Cross-Tenant Combine Shipments Engine Section */}
             <div id="load-pool" className="scroll-mt-28 md:scroll-mt-32">
               <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
             </div>
@@ -451,7 +451,7 @@ export default function App() {
       {/* Footer */}
       <footer className="glass-panel border-t border-slate-800 py-4 px-6 mt-8 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <strong>EcoLogix Engine</strong> — Built for 2-Day Hackathon Submission.
+          <strong>EcoLogix Engine</strong> — Built with ❤️ by CodeCraft
         </div>
         <div className="flex items-center space-x-4">
           <span className="flex items-center gap-1 text-emerald-400">

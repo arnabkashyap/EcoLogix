@@ -410,7 +410,7 @@ export function MapView({ routeResult, depot }) {
                     Stop #{idx}: {stop.title || stop.dest_name}
                   </div>
                   <div className="text-slate-600 mt-0.5">
-                    Freight Weight: <span className="font-semibold">{stop.load_kg} kg</span>
+                    Shipment Weight: <span className="font-semibold">{stop.load_kg} kg</span>
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">
                     Lat: {stop.lat.toFixed(4)}, Lng: {stop.lng.toFixed(4)}

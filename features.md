@@ -21,16 +21,16 @@
 
 | # | Feature | What it does | Linked FR |
 |---|---|---|---|
-| S1 | Interactive Pareto frontier | Plot the (time, emissions) trade-off curve across α = 0 → 1 and let the user pick a point | FR-4 |
+| S1 | Interactive best route options | Plot the (time, emissions) trade-off curve across α = 0 → 1 and let the user pick a point | FR-4 |
 | S2 | Fastest ↔ greenest slider | A single α slider that re-runs optimization live and updates the map/route/CO₂ number | FR-4 |
-| S3 | Cross-provider load-pooling match | Detect at least one empty return leg that can be matched to another provider's open shipment, shown end-to-end (empty leg → match → CO₂/cost saved) | FR-5 |
+| S3 | Cross-provider combine shipments match | Detect at least one empty return leg that can be matched to another delivery company's open shipment, shown end-to-end (empty leg → match → CO₂/cost saved) | FR-5 |
 
 ### Could-Have — stretch goals if time allows
 
 | # | Feature | What it does | Linked FR |
 |---|---|---|---|
-| C1 | Live traffic API integration | Replace static/simulated congestion index with a real traffic feed | — |
-| C2 | EV vs. diesel comparison toggle | Swap a vehicle's fuel profile between electric and diesel and see the emissions delta | — |
+| C1 | EV vs. diesel scenario toggle | Let the user flip a switch ("What if this were an EV fleet?") and re-run emissions math using grid carbon intensity | FR-6 |
+| C2 | Cumulative ESG summary panel | Display aggregated metrics (total CO₂ saved across all routes run, equivalent trees planted) to show long-term impact | FR-8 |
 | C3 | Multimodal mode-shift flag | Flag long-haul legs where switching road → rail would meaningfully cut emissions without breaking the delivery window | FR-7 |
 | C4 | Multi-provider marketplace view | Simple listing of open shipments and available capacity across all mock providers | — |
 
@@ -46,20 +46,6 @@
 
 ## 2. Feature Detail — User-Facing Behavior
 
-### M1 — Mock Dataset Ingestion
-- Loads vehicles (type, fuel/energy profile, capacity, home depot), shipments (origin, destination, weight, delivery window), and a traffic/congestion layer (live or simulated).
-- Works fully offline — this is what makes the demo resilient to venue Wi-Fi problems.
-
-### M2 — Route Optimization
-- Input: a set of vehicle IDs + shipment/stop IDs + an α weighting (0 = pure time, 1 = pure emissions).
-- Output: an ordered stop sequence per vehicle, with total distance, time, and CO₂.
-- Solved via an exact combinatorial solver (optimal for ≤9 stops), or a greedy nearest-neighbor heuristic fallback above that.
-
-### M3 — Emissions Calculator
-- Per-segment fuel/CO₂ estimate driven by vehicle type, distance, load factor, and congestion index (diesel formula), or distance × kWh/km × grid factor (EV formula).
-- Every emissions number shown in the UI must be traceable to this formula (a "how we calculated this" tooltip), per the PRD's Explainability requirement.
-
-### M4 — Baseline vs. Optimized Comparison
 - Runs the same stop set at α = 1 (time-only) to produce the "naive" baseline.
 - Displays both routes' totals side by side with a computed `co2_saved_pct` — target ≥15–20% for the demo.
 

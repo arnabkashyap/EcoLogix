@@ -1,5 +1,5 @@
 # EcoLogix
-## Multimodal Supply Chain Route & Carbon-Aware Logistics Engine
+## Multiple Transport Types Supply Chain Route & Eco-Friendly Goods Transportation Engine
 ### Product Requirements Document (PRD) — Hackathon Prototype
 
 | | |
@@ -16,7 +16,7 @@
 
 ## 1. Executive Summary
 
-EcoLogix is a B2B route-optimization engine that treats **carbon emissions as a first-class routing objective**, alongside transit time and cost. It ingests fleet telemetry, delivery windows, and traffic conditions to model fuel/energy consumption per route segment, computes a **Pareto-optimal frontier of routes** (fast vs. clean vs. cheap), and identifies **load-pooling opportunities** across logistics providers so that return legs don't have to run empty.
+EcoLogix is a B2B route-optimization engine that treats **carbon emissions as a first-class routing objective**, alongside transit time and cost. It ingests fleet telemetry, delivery windows, and traffic conditions to model fuel/energy consumption per route segment, computes a **best route options frontier of routes** (fast vs. clean vs. cheap), and identifies **combine shipments opportunities** across delivery companies so that return legs don't have to run empty.
 
 The hackathon deliverable is a working prototype that ingests a mock (or lightly real) dataset of vehicles, shipments, and delivery windows, computes optimized vs. baseline routes, visualizes the trade-off between speed and emissions, and demonstrates at least one cross-provider load-pooling match.
 

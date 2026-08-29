@@ -27,51 +27,87 @@ export function LoadPoolPanel({ onMatchTriggered }) {
   };
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="glass-panel p-5 rounded-2xl border border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-xs font-semibold text-slate-200">Empty Trip Opportunity (Load Pooling)</h3>
-          <p className="text-[11px] text-slate-400">Combine return journeys with other logistics providers to eliminate empty truck miles.</p>
+          <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
+            <Truck className="w-5 h-5 text-emerald-400" />
+            🚛 Empty Trip Opportunity (Load Pooling)
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Combine return journeys with other logistics providers to eliminate empty truck miles.
+          </p>
         </div>
 
         <button
           onClick={handleTriggerMatch}
           disabled={loading}
-          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
           {loading ? (
             <>
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-950" />
-              Scanning...
+              <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+              Scanning opportunities...
             </>
           ) : (
-            'Find Opportunities'
+            <>
+              <RefreshCw className="w-4 h-4 text-slate-950" />
+              Find Empty Trip Opportunities
+            </>
           )}
         </button>
       </div>
 
       {/* 3-Step Plain Language Visual Diagram (Req #7) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 border border-emerald-500/30 text-[10px]">1</span>
-          <span className="text-slate-300 font-medium">Empty return trip</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 border border-emerald-500/30 text-[11px]">1</span>
+          <span className="text-slate-300 font-medium">Your truck has an empty return trip</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center shrink-0 border border-teal-500/30 text-[10px]">2</span>
-          <span className="text-slate-300 font-medium">Cargo along route</span>
+        <div className="flex items-center gap-2.5">
+          <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center shrink-0 border border-teal-500/30 text-[11px]">2</span>
+          <span className="text-slate-300 font-medium">Another provider has cargo along this route</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0 border border-amber-500/30 text-[10px]">3</span>
-          <span className="text-slate-300 font-medium">Combine & save CO₂</span>
+        <div className="flex items-center gap-2.5">
+          <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0 border border-amber-500/30 text-[11px]">3</span>
+          <span className="text-slate-300 font-medium">Combine trips & eliminate unnecessary vehicle journeys</span>
         </div>
       </div>
 
+      {/* Privacy Guarantee Banner */}
+      <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs mb-4">
+        <div className="flex items-center gap-2 text-slate-400 text-[11px]">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>Your company data stays isolated — only shared route opportunities are matched.</span>
+        </div>
+        <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-emerald-400 border border-slate-700 font-mono shrink-0">
+          JWT Isolated
+        </span>
+      </div>
+
+      {/* Empty State */}
+      {!hasRun && (
+        <div className="p-8 text-center border-2 border-dashed border-slate-800/80 rounded-xl bg-slate-950/40">
+          <Layers className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+          <div className="text-xs font-semibold text-slate-300">Ready to discover empty-trip opportunities</div>
+          <div className="text-[11px] text-slate-500 mt-1 max-w-md mx-auto">
+            Click "Find Empty Trip Opportunities" above to check cross-company load pooling matches.
+          </div>
+        </div>
+      )}
+
+      {hasRun && matches.length === 0 && (
+        <div className="p-6 text-center text-xs text-slate-400 bg-slate-950/40 border border-slate-800 rounded-xl">
+          No compatible empty-trip opportunities found right now. Check back when new shipment routes are posted.
+        </div>
+      )}
+
       {/* Matches Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {matches.map((match) => (
           <div
             key={match.id}
-            className="bg-slate-950 border border-slate-800 p-3.5 rounded-lg flex flex-col justify-between space-y-2 text-xs"
+            className="glass-panel-glow p-4 rounded-xl border border-emerald-500/40 flex flex-col justify-between space-y-3"
           >
             <div>
               <div className="flex items-center justify-between mb-2">

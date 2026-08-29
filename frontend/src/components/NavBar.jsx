@@ -91,8 +91,8 @@ export function NavBar() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-t border-slate-800/60 py-1.5 px-2 md:px-4 transition-all">
-      <div className="max-w-4xl mx-auto flex items-center justify-around overflow-x-auto no-scrollbar gap-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 py-2.5 px-3 md:px-6 shadow-[0_-4px_25px_rgba(0,0,0,0.6)] transition-all">
+      <div className="max-w-7xl mx-auto flex items-center justify-start md:justify-center overflow-x-auto no-scrollbar space-x-2 py-0.5">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -101,14 +101,14 @@ export function NavBar() {
               key={item.id}
               ref={isActive ? activeTabRef : null}
               onClick={() => scrollToSection(item.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-emerald-500/10 text-emerald-400 font-semibold'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.25)] font-bold scale-[1.02]'
+                  : 'bg-slate-900/90 text-slate-400 border border-slate-800/80 hover:text-slate-200 hover:bg-slate-800/90'
               }`}
             >
               <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-              <span className="text-[11px]">{item.label}</span>
+              <span>{item.label}</span>
             </button>
           );
         })}

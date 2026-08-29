@@ -478,15 +478,6 @@ export default function App() {
               isOptimizing={isOptimizing}
             />
 
-            {/* Trade-off Curve */}
-            <div id="pareto-chart" className="scroll-mt-20 md:scroll-mt-24">
-              <ParetoChart
-                paretoPoints={paretoPoints}
-                currentAlpha={alpha}
-                onSelectAlpha={handleAlphaChange}
-                solutionMethod={routeResult?.solution_method}
-              />
-            </div>
           </div>
 
           {/* Right Column: Map & Results (8 cols) */}

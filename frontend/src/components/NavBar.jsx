@@ -11,7 +11,6 @@ import {
 const NAV_ITEMS = [
   { id: 'route-optimizer', label: 'Route Optimizer', icon: Sliders },
   { id: 'map-view', label: 'Route Map', icon: MapPin },
-  { id: 'pareto-chart', label: 'Best Route Options', icon: TrendingDown },
   { id: 'ev-comparison', label: 'EV Comparison', icon: Zap },
   { id: 'load-pool', label: 'Combine Shipments', icon: Layers },
   { id: 'impact-summary', label: 'Impact Summary', icon: BarChart3 },

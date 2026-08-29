@@ -12,6 +12,8 @@ import { DemoGuideModal } from './components/DemoGuideModal';
 import { ImpactSummaryPanel } from './components/ImpactSummaryPanel';
 import { EVComparisonCard } from './components/EVComparisonCard';
 import { WalkthroughTooltip } from './components/WalkthroughTooltip';
+import { ShipmentInputForm } from './components/ShipmentInputForm';
+import { VoiceNavigation } from './components/VoiceNavigation';
 import {
   Truck,
   Package,
@@ -27,6 +29,7 @@ import {
   HelpCircle,
   RefreshCw,
   Sliders,
+  Navigation,
 } from 'lucide-react';
 
 export default function App() {
@@ -48,6 +51,7 @@ export default function App() {
   const [showExplainer, setShowExplainer] = useState(false);
   const [showDemoGuide, setShowDemoGuide] = useState(false);
   const [walkthroughStep, setWalkthroughStep] = useState(0);
+  const [activeNavigationRoute, setActiveNavigationRoute] = useState(null);
 
   const fetchImpactSummary = async () => {
     try {
@@ -295,10 +299,26 @@ export default function App() {
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" /> EcoLogix found a greener route!
               </h3>
             </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase font-extrabold text-slate-400">CO₂ REDUCTION</div>
-              <div className="text-3xl font-black text-emerald-400">
-                {routeResult ? `-${routeResult.co2_saved_pct}%` : '-0%'}
+            <div className="flex items-center gap-3">
+              {routeResult && (
+                <button
+                  onClick={() =>
+                    setActiveNavigationRoute({
+                      category: alpha === 1 ? 'fast' : alpha === 0 ? 'green' : 'balanced',
+                      waypoints: (routeResult.ordered_stops || []).map((s) => ({ lat: s.lat, lng: s.lng })),
+                    })
+                  }
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold border border-emerald-500/40 flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                >
+                  <Navigation className="w-4 h-4 text-emerald-400" />
+                  <span>Start Voice Navigation</span>
+                </button>
+              )}
+              <div className="text-right">
+                <div className="text-[10px] uppercase font-extrabold text-slate-400">CO₂ REDUCTION</div>
+                <div className="text-3xl font-black text-emerald-400">
+                  {routeResult ? `-${routeResult.co2_saved_pct}%` : '0%'}
+                </div>
               </div>
             </div>
           </div>
@@ -472,6 +492,15 @@ export default function App() {
               </div>
             </div>
 
+            {/* Smart Shipment Spec & Risk Entry Form */}
+            <ShipmentInputForm
+              onSubmit={(smartData) => {
+                if (selectedVehicle && selectedShipmentIds.length > 0) {
+                  runOptimization(selectedVehicle.id, selectedShipmentIds, alpha);
+                }
+              }}
+            />
+
             {/* Faster ↔ Greener Slider */}
             <AlphaSlider
               alpha={alpha}
@@ -605,6 +634,14 @@ export default function App() {
         onPrev={() => setWalkthroughStep((prev) => prev - 1)}
         onDismiss={() => setWalkthroughStep(-1)}
       />
+
+      {/* Voice Navigation Overlay */}
+      {activeNavigationRoute && (
+        <VoiceNavigation
+          route={activeNavigationRoute}
+          onExit={() => setActiveNavigationRoute(null)}
+        />
+      )}
     </div>
   );
 }

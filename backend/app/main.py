@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from backend.app.db.database import Base, engine
 from backend.app.db.seed import seed_database
-from backend.app.api import auth, routes, jobs, loadpool, emissions, data, impact
+from backend.app.api import auth, routes, jobs, loadpool, emissions, data, impact, lookup
 
 # Initialize Database Schema
 Base.metadata.create_all(bind=engine)
@@ -43,6 +43,7 @@ app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["Jobs"])
 app.include_router(loadpool.router, prefix="/api/v1/loadpool", tags=["Load Pool"])
 app.include_router(emissions.router, prefix="/api/v1/emissions", tags=["Emissions"])
 app.include_router(impact.router, prefix="/api/v1/impact", tags=["Impact"])
+app.include_router(lookup.router, prefix="/api/v1/lookup", tags=["Lookup"])
 app.include_router(data.router, prefix="/api/v1", tags=["Data"])
 
 

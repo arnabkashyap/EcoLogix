@@ -166,11 +166,8 @@ export default function App() {
       {/* Header Navigation */}
       <Header onOpenDemoGuide={() => setShowDemoGuide(true)} />
 
-      {/* Sticky Sub-Navigation Bar */}
-      <NavBar />
-
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 pb-20 md:pb-24">
         {/* Top Plain-Language Headline Banner (Req #2) */}
         <div className="glass-panel p-5 md:p-6 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/50 via-slate-900/90 to-slate-950/90 shadow-xl">
           <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-100 tracking-tight leading-snug">
@@ -187,7 +184,7 @@ export default function App() {
         </div>
 
         {/* Overall Sustainability Impact Headline Panel (Task 3) */}
-        <div id="impact-summary" className="scroll-mt-28 md:scroll-mt-32">
+        <div id="impact-summary" className="scroll-mt-20 md:scroll-mt-24">
           <ImpactSummaryPanel impactSummary={impactSummary} />
         </div>
 
@@ -276,7 +273,7 @@ export default function App() {
         {/* Dashboard Core: Left Controls + Right Map & Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Fleet & Optimization Controls (4 cols) */}
-          <div id="route-optimizer" className="lg:col-span-4 space-y-6 scroll-mt-28 md:scroll-mt-32">
+          <div id="route-optimizer" className="lg:col-span-4 space-y-6 scroll-mt-20 md:scroll-mt-24">
             {/* Vehicle Selection Card */}
             <div className="glass-panel p-4 rounded-2xl border border-slate-800">
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -357,7 +354,7 @@ export default function App() {
             />
 
             {/* Best Route Options Chart */}
-            <div id="pareto-chart" className="scroll-mt-28 md:scroll-mt-32">
+            <div id="pareto-chart" className="scroll-mt-20 md:scroll-mt-24">
               <ParetoChart
                 paretoPoints={paretoPoints}
                 currentAlpha={alpha}
@@ -370,12 +367,12 @@ export default function App() {
           {/* Right Column: Interactive Map & Route Summary (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
             {/* Interactive Leaflet Map */}
-            <div id="map-view" className="scroll-mt-28 md:scroll-mt-32">
+            <div id="map-view" className="scroll-mt-20 md:scroll-mt-24">
               <MapView routeResult={routeResult} depot={depot} />
             </div>
 
             {/* EV Fleet Electrification Scenario Card (Task 4) */}
-            <div id="ev-comparison" className="scroll-mt-28 md:scroll-mt-32">
+            <div id="ev-comparison" className="scroll-mt-20 md:scroll-mt-24">
               <EVComparisonCard routeResult={routeResult} />
             </div>
 
@@ -441,7 +438,7 @@ export default function App() {
             )}
 
             {/* Cross-Tenant Combine Shipments Engine Section */}
-            <div id="load-pool" className="scroll-mt-28 md:scroll-mt-32">
+            <div id="load-pool" className="scroll-mt-20 md:scroll-mt-24">
               <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
             </div>
           </div>
@@ -449,7 +446,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="glass-panel border-t border-slate-800 py-4 px-6 mt-8 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
+      <footer className="glass-panel border-t border-slate-800 py-4 px-6 mt-8 mb-16 md:mb-20 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
         <div>
           <strong>EcoLogix Engine</strong> — Built with ❤️ by CodeCraft
         </div>
@@ -461,6 +458,9 @@ export default function App() {
           <span>Shared Emissions Model v1.0</span>
         </div>
       </footer>
+
+      {/* Fixed Bottom Navigation Bar */}
+      <NavBar />
 
       {/* Modals & Walkthrough */}
       <EmissionsExplainer

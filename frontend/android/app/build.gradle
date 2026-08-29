@@ -28,6 +28,8 @@ android {
                 storePassword ksPassword
                 keyAlias kAlias
                 keyPassword kPassword
+                v1SigningEnabled true
+                v2SigningEnabled true
             }
         }
     }
@@ -37,8 +39,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             
             def ksPath = System.getenv("ECOLOGIX_KEYSTORE_PATH") ?: (project.hasProperty("ECOLOGIX_KEYSTORE_PATH") ? project.property("ECOLOGIX_KEYSTORE_PATH") : null)
-            if (ksPath) {
+            if (ksPath && file(ksPath).exists()) {
                 signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
             }
         }
     }

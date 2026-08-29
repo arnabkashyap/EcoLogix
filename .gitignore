@@ -41,3 +41,23 @@ frontend/dist/
 *.swp
 *.swo
 .gemini/
+
+# Tauri Desktop
+frontend/src-tauri/target/
+frontend/src-tauri/gen/
+
+# Signing secrets / Keystores
+*.keystore
+*.jks
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
+
+# Android (Capacitor)
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/.gradle/
+frontend/android/local.properties

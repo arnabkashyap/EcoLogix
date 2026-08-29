@@ -1,0 +1,9 @@
+{
+  "appId": "com.ecologix.mobile",
+  "appName": "EcoLogix",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -3,9 +3,13 @@
  * Enforces JWT Authorization Header injection for all requests.
  */
 
-const API_BASE_URL = window.location.hostname === 'localhost' && window.location.port === '3000'
-  ? 'http://localhost:8000/api/v1'
-  : '/api/v1';
+const envBaseUrl = import.meta.env?.VITE_API_BASE_URL;
+
+const API_BASE_URL = envBaseUrl
+  ? envBaseUrl.replace(/\/+$/, '')
+  : (window.location.hostname === 'localhost' && window.location.port === '3000'
+      ? 'http://localhost:8000/api/v1'
+      : '/api/v1');
 
 export function getStoredToken() {
   return localStorage.getItem('ecologix_token');

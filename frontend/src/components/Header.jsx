@@ -7,7 +7,7 @@ export function Header() {
       {/* Brand Logo & Pitch Tagline */}
       <div className="flex items-center space-x-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 shadow-lg shadow-emerald-950/50 flex items-center justify-center">
-          <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+          <div className="w-full h-full bg-[#181A20] rounded-[10px] flex items-center justify-center">
             <Leaf className="w-5 h-5 text-emerald-400" />
           </div>
         </div>

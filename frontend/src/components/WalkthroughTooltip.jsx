@@ -28,7 +28,7 @@ export function WalkthroughTooltip({ step, onNext, onPrev, onDismiss }) {
   const currentStep = steps[step];
 
   return (
-    <div className="fixed bottom-6 right-6 z-[999] max-w-sm w-full glass-panel p-4 rounded-2xl border border-emerald-500/40 shadow-2xl animate-in fade-in slide-in-from-bottom-5 duration-300 bg-slate-950/95">
+    <div className="fixed bottom-6 right-6 z-[999] max-w-sm w-full glass-panel p-4 rounded-2xl border border-emerald-500/40 shadow-2xl animate-in fade-in slide-in-from-bottom-5 duration-300 bg-[#181A20]/95">
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
         <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
           <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -36,7 +36,7 @@ export function WalkthroughTooltip({ step, onNext, onPrev, onDismiss }) {
         </div>
         <button
           onClick={onDismiss}
-          className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+          className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#1F2937] transition-colors"
           title="Dismiss walkthrough"
         >
           <X className="w-4 h-4" />
@@ -60,7 +60,7 @@ export function WalkthroughTooltip({ step, onNext, onPrev, onDismiss }) {
           {step > 0 && (
             <button
               onClick={onPrev}
-              className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-800 flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1 rounded-lg bg-[#111827] hover:bg-[#1F2937] text-slate-300 text-xs font-medium border border-slate-800 flex items-center gap-1 transition-colors"
             >
               <ArrowLeft className="w-3 h-3" /> Back
             </button>

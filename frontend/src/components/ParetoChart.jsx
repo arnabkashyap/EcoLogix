@@ -32,7 +32,7 @@ export function ParetoChart({ paretoPoints, currentAlpha, onSelectAlpha, solutio
     if (active && payload && payload.length) {
       const pt = payload[0].payload;
       return (
-        <div className="glass-panel p-3 rounded-xl border border-emerald-500/40 text-xs shadow-2xl bg-slate-950/95">
+        <div className="glass-panel p-3 rounded-xl border border-emerald-500/40 text-xs shadow-2xl bg-[#181A20]/95">
           <div className="font-bold text-emerald-400 mb-1 flex items-center justify-between gap-2">
             <span>{pt.label}</span>
             {pt.isSelected && <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500 text-slate-950 font-bold rounded">Active</span>}
@@ -127,14 +127,14 @@ export function ParetoChart({ paretoPoints, currentAlpha, onSelectAlpha, solutio
         </button>
 
         {showMath && (
-          <div className="mt-2 p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 space-y-1.5 leading-relaxed">
+          <div className="mt-2 p-3 rounded-xl bg-[#111827]/90 border border-slate-800 text-[11px] text-slate-300 space-y-1.5 leading-relaxed">
             <div>
               <strong>Bi-Objective Optimization Formula:</strong> EcoLogix balances time and carbon using normalized weights <span className="text-emerald-400 font-mono">Cost = (1-α)×CO₂ + α×Time</span> across parameter <span className="text-emerald-400 font-mono">α ∈ [0, 1]</span>.
             </div>
             {solutionMethod && (
               <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-800 flex items-center gap-2">
                 <span>Solver Algorithm:</span>
-                <span className="font-mono text-emerald-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                <span className="font-mono text-emerald-300 bg-[#181A20] px-1.5 py-0.5 rounded border border-slate-800">
                   {solutionMethod === 'exact_optimal' ? 'Exact Optimal Combinatorial Search' : 'Greedy Nearest-Neighbor Heuristic'}
                 </span>
               </div>

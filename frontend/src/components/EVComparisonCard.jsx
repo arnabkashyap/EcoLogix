@@ -79,7 +79,7 @@ export function EVComparisonCard({ routeResult }) {
         <div className="mt-4 pt-4 border-t border-slate-800 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* Diesel Current Box */}
-            <div className="bg-slate-950/80 p-3 rounded-xl border border-rose-500/20 text-xs">
+            <div className="bg-[#181A20]/80 p-3 rounded-xl border border-rose-500/20 text-xs">
               <div className="text-[10px] text-slate-400 uppercase font-semibold">
                 Current Diesel Fleet
               </div>
@@ -92,7 +92,7 @@ export function EVComparisonCard({ routeResult }) {
             </div>
 
             {/* EV Equivalent Box */}
-            <div className="bg-slate-950/80 p-3 rounded-xl border border-teal-500/30 text-xs">
+            <div className="bg-[#181A20]/80 p-3 rounded-xl border border-teal-500/30 text-xs">
               <div className="text-[10px] text-teal-400 uppercase font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> EV Fleet Equivalent
               </div>

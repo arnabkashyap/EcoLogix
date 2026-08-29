@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from backend.app.db.database import Base, engine
 from backend.app.db.seed import seed_database
-from backend.app.api import auth, routes, jobs, loadpool, emissions, data, impact, lookup
+from backend.app.api import auth, routes, jobs, loadpool, emissions, data, impact, lookup, driver
 
 # Initialize Database Schema
 Base.metadata.create_all(bind=engine)

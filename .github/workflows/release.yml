@@ -76,6 +76,9 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Make Gradlew Executable
+        run: chmod +x frontend/android/gradlew
+
       - name: Build Android App
         working-directory: frontend
         env:

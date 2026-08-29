@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './context/AuthContext';
 import { api } from './services/api';
 import { Header } from './components/Header';
@@ -41,6 +41,7 @@ export default function App() {
   const [alpha, setAlpha] = useState(0.5);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeResult, setRouteResult] = useState(null);
+  const [routeCategory, setRouteCategory] = useState('greener');
   const [paretoPoints, setParetoPoints] = useState([]);
   const [impactSummary, setImpactSummary] = useState(null);
 
@@ -68,7 +69,7 @@ export default function App() {
           api.getShipments(),
         ]);
 
-        setDepot(fleetsRes.depot || { city: 'NCR Freight Hub, Delhi', lat: 28.6139, lng: 77.2090 });
+        setDepot(fleetsRes.depot || { city: 'Guwahati Hub', lat: 26.1445, lng: 91.7362 });
         const vehList = vehRes.vehicles || [];
         setVehicles(vehList);
         if (vehList.length > 0) {
@@ -87,7 +88,7 @@ export default function App() {
         }
       } catch (err) {
         console.error('Failed to load tenant data:', err);
-        const fbDepot = { city: 'NCR Freight Hub, Delhi', lat: 28.6139, lng: 77.2090 };
+        const fbDepot = { city: 'Guwahati Hub', lat: 26.1445, lng: 91.7362 };
         const fbVehicles = [
           { id: 'veh-nw-101', name: 'NW Heavy Freightliner #101', vehicle_type: 'heavy_truck', capacity_kg: 18000, current_lat: 28.6139, current_lng: 77.2090 },
           { id: 'veh-nw-202', name: 'NW E-Cascadia EV Truck #202', vehicle_type: 'ev_truck', capacity_kg: 14000, current_lat: 28.6139, current_lng: 77.2090 },
@@ -163,6 +164,14 @@ export default function App() {
   const co2SavedKg = routeResult
     ? Math.max(0, (routeResult.baseline_co2_kg || 0) - (routeResult.total_co2_kg || 0))
     : 0;
+
+  const activeRouteResult = useMemo(() => {
+    if (!routeResult) return null;
+    if (routeCategory === 'faster') {
+      return { ...routeResult, ordered_stops: routeResult.baseline_stops };
+    }
+    return routeResult;
+  }, [routeResult, routeCategory]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
@@ -483,8 +492,30 @@ export default function App() {
           {/* Right Column: Map & Results (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
             {/* Interactive Route Map (Req #4) */}
-            <div id="map-view" className="scroll-mt-20 md:scroll-mt-24">
-              <MapView routeResult={routeResult} depot={depot} />
+            <div id="map-view" className="scroll-mt-20 md:scroll-mt-24 relative space-y-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => routeResult && setRouteCategory('faster')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                    routeCategory === 'faster'
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800'
+                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Faster Route (Time-Optimized)
+                </button>
+                <button
+                  onClick={() => routeResult && setRouteCategory('greener')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                    routeCategory === 'greener'
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800'
+                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Greener Route (Carbon-Aware)
+                </button>
+              </div>
+              <MapView routeResult={activeRouteResult} depot={depot} />
             </div>
 
             {/* EV Fleet Scenario */}

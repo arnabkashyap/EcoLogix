@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents, ZoomControl, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import { Search, MapPin, Navigation, Crosshair } from 'lucide-react';
 
@@ -21,20 +21,6 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [13, 13],
 });
 
-const createStopIcon = (number, isOptimized = true) =>
-  L.divIcon({
-    className: 'custom-stop-icon',
-    html: `<div style="background: ${isOptimized ? '#10b981' : '#f43f5e'}; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 10px ${isOptimized ? 'rgba(16, 185, 129, 0.8)' : 'rgba(244, 63, 94, 0.8)'}; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 11px;">${number}</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-
-const riskWarningIcon = L.divIcon({
-  className: 'custom-risk-icon',
-  html: `<div style="background: #f59e0b; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 12px rgba(245, 158, 11, 0.9); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000000; font-size: 13px;">⚠️</div>`,
-  iconSize: [26, 26],
-  iconAnchor: [13, 13],
-});
 
 function MapBoundsFitter({ points, shouldFit }) {
   const map = useMap();
@@ -58,8 +44,8 @@ function MapBoundsFitter({ points, shouldFit }) {
 function MapRecenter({ targetCoords }) {
   const map = useMap();
   useEffect(() => {
-    if (targetCoords && targetCoords.length === 2) {
-      map.flyTo(targetCoords, 13, { duration: 1.2 });
+    if (targetCoords && targetCoords.length >= 2) {
+      map.flyTo([targetCoords[0], targetCoords[1]], 13, { duration: 1.2 });
     }
   }, [targetCoords, map]);
   return null;
@@ -80,6 +66,17 @@ function MapClickHandler({ onLocationSelect }) {
   return null;
 }
 
+function MapFixer() {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+}
+
 export function MapView({ routeResult, depot }) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
@@ -87,6 +84,7 @@ export function MapView({ routeResult, depot }) {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
 
+  const [isNavigating, setIsNavigating] = useState(false);
   const [hasUserRequestedRoute, setHasUserRequestedRoute] = useState(false);
   const routeCountRef = useRef(0);
 
@@ -111,12 +109,20 @@ export function MapView({ routeResult, depot }) {
           };
           setUserLocation(loc);
           if (shouldRecenter) {
-            setRecenterCoords([loc.lat, loc.lng]);
+            setRecenterCoords([loc.lat, loc.lng, Date.now()]);
           }
         },
         (err) => console.warn('Geolocation unavailable or denied:', err.message),
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
+    }
+  };
+
+  const handleRecenter = () => {
+    if (userLocation) {
+      setRecenterCoords([userLocation.lat, userLocation.lng, Date.now()]);
+    } else {
+      fetchUserLocation(true);
     }
   };
 
@@ -205,13 +211,34 @@ export function MapView({ routeResult, depot }) {
     ? [userLocation.lat, userLocation.lng]
     : depot
       ? [depot.lat, depot.lng]
-      : [28.6139, 77.2090];
+      : [26.1445, 91.7362];
 
   const optimizedStops = routeResult?.ordered_stops || [];
-  const baselineStops = routeResult?.baseline_stops || [];
 
-  const optPolyline = optimizedStops.map((s) => [s.lat, s.lng]);
-  const basePolyline = baselineStops.map((s) => [s.lat, s.lng]);
+  const optPolyline = useMemo(() => {
+    if (!depot || !userLocation || typeof userLocation.lat !== 'number') return [];
+    
+    const fullRoute = optimizedStops.map(s => [s.lat, s.lng]);
+    if (fullRoute.length === 0) {
+      return [[userLocation.lat, userLocation.lng], [depot.lat, depot.lng]];
+    }
+
+    let closestIdx = 0;
+    let minDist = Infinity;
+    fullRoute.forEach((pt, idx) => {
+      const dist = Math.pow(pt[0] - userLocation.lat, 2) + Math.pow(pt[1] - userLocation.lng, 2);
+      if (dist < minDist) {
+        minDist = dist;
+        closestIdx = idx;
+      }
+    });
+
+    return [
+      [userLocation.lat, userLocation.lng],
+      ...fullRoute.slice(closestIdx + 1),
+      [depot.lat, depot.lng]
+    ];
+  }, [userLocation, depot, optimizedStops]);
 
   const hasRiskFlag = routeResult?.legs?.some((l) => l.climate_risk_flag);
 
@@ -228,100 +255,39 @@ export function MapView({ routeResult, depot }) {
   return (
     <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
       {/* Floating Map Legend & Search Controls Overlay */}
-      <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
-        {/* Location Search Bar */}
-        <form onSubmit={handleSearch} className="flex items-center gap-1.5 glass-panel p-1.5 rounded-xl border border-slate-800 shadow-lg bg-slate-950/90">
-          <input
-            type="text"
-            placeholder="Type city or address to set exact location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-slate-900 text-xs text-slate-100 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-800 focus:outline-none focus:border-emerald-500 flex-1"
-          />
+      <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
+        <div className="flex flex-col gap-2">
           <button
-            type="submit"
-            disabled={isSearching}
-            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50 shrink-0"
-          >
-            <Search className="w-3.5 h-3.5" />
-            {isSearching ? '...' : 'Search'}
-          </button>
-        </form>
-
-        {searchError && (
-          <div className="text-[11px] text-rose-400 bg-slate-950/90 px-3 py-1 rounded-lg border border-rose-500/30">
-            {searchError}
-          </div>
-        )}
-
-        {/* Legend Panel & Recenter Buttons */}
-        <div className="glass-panel px-3.5 py-2 rounded-xl text-xs flex flex-wrap items-center gap-3 bg-slate-950/90">
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-1 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
-            <span className="font-semibold text-slate-200">EcoLogix Route</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-1 bg-rose-500/80 rounded-full border-b border-dashed border-rose-300"></span>
-            <span className="text-slate-400">Baseline (Time-only)</span>
-          </div>
-          {hasRiskFlag && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
-              <span>⚠️ Climate Risk Corridor</span>
-            </div>
-          )}
-          <button
-            onClick={() => fetchUserLocation(true)}
-            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+            onClick={handleRecenter}
+            className="px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
             title="Recenter on my live location"
           >
-            <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
+            <Crosshair className="w-4 h-4 text-emerald-400" />
             <span>Recenter on my location</span>
           </button>
+          <button
+            onClick={() => setIsNavigating(!isNavigating)}
+            className={`px-3 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer ${
+              isNavigating 
+                ? 'bg-rose-500 hover:bg-rose-400 text-slate-950' 
+                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+            }`}
+          >
+            <Navigation className="w-4 h-4" />
+            <span>{isNavigating ? 'Stop Navigation' : 'Start Navigation'}</span>
+          </button>
         </div>
-
-        {/* User Location Status Badge */}
-        {userLocation && (
-          <div className="glass-panel px-3 py-1.5 rounded-xl text-[11px] text-slate-300 flex items-center justify-between bg-slate-950/90 border border-emerald-500/30">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>
-                {userLocation.name
-                  ? userLocation.name.split(',')[0]
-                  : userLocation.source === 'gps'
-                    ? `Live GPS (${userLocation.accuracy ? `±${userLocation.accuracy}m` : 'active'})`
-                    : userLocation.source === 'search'
-                      ? 'Searched Position'
-                      : 'Pinned Position'}
-              </span>
-            </div>
-            <span className="text-[10px] text-slate-400 italic">Drag marker or click map to adjust</span>
-          </div>
-        )}
-
-        {routeResult && (
-          <div className="glass-panel-glow px-4 py-2 rounded-xl flex items-center gap-3 bg-slate-950/90">
-            <div className="text-emerald-400 font-extrabold text-lg leading-none">
-              -{routeResult.co2_saved_pct}%
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-bold">
-                CO₂ Emissions Saved
-              </div>
-              <div className="text-xs text-slate-300">
-                {routeResult.total_co2_kg} kg vs {routeResult.baseline_co2_kg} kg baseline
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Leaflet Map */}
       <MapContainer
         center={center}
         zoom={10}
+        zoomControl={false}
         scrollWheelZoom={true}
         className="w-full h-full dark-tiles"
       >
+        <ZoomControl position="bottomright" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -329,6 +295,9 @@ export function MapView({ routeResult, depot }) {
 
         {/* Dynamic Recenter */}
         <MapRecenter targetCoords={recenterCoords} />
+
+        {/* Fix Map Size */}
+        <MapFixer />
 
         {/* Manual Map Click Selector */}
         <MapClickHandler onLocationSelect={handleManualSelect} />
@@ -358,30 +327,7 @@ export function MapView({ routeResult, depot }) {
           </Marker>
         )}
 
-        {/* Baseline Path (Dashed Rose Red) */}
-        {basePolyline.length > 1 && (
-          <Polyline
-            positions={basePolyline}
-            pathOptions={{
-              color: '#f43f5e',
-              weight: 3.5,
-              dashArray: '6, 8',
-              opacity: 0.7,
-            }}
-          />
-        )}
 
-        {/* Optimized Path (Solid Emerald Green) */}
-        {optPolyline.length > 1 && (
-          <Polyline
-            positions={optPolyline}
-            pathOptions={{
-              color: '#10b981',
-              weight: 5,
-              opacity: 0.95,
-            }}
-          />
-        )}
 
         {/* Depot Marker */}
         {depot && (
@@ -395,61 +341,41 @@ export function MapView({ routeResult, depot }) {
           </Marker>
         )}
 
-        {/* Stop Markers */}
-        {optimizedStops.map((stop, idx) => {
-          if (stop.stop_type === 'depot') return null;
-          return (
-            <Marker
-              key={stop.id || idx}
-              position={[stop.lat, stop.lng]}
-              icon={createStopIcon(idx)}
-            >
-              <Popup>
-                <div className="p-1 text-slate-900 text-xs">
-                  <div className="font-bold text-emerald-800">
-                    Stop #{idx}: {stop.title || stop.dest_name}
-                  </div>
-                  <div className="text-slate-600 mt-0.5">
-                    Shipment Weight: <span className="font-semibold">{stop.load_kg} kg</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Lat: {stop.lat.toFixed(4)}, Lng: {stop.lng.toFixed(4)}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* Stop Markers Removed */}
+        {/* Climate Risk Markers Removed */}
+        
+        {/* TRAFFIC_ZONES_INSERT */}
+        {[
+          { id: 1, lat: 26.1445, lng: 91.7362, radius_m: 800, level: 'heavy' },
+          { id: 2, lat: 26.1365, lng: 91.7998, radius_m: 600, level: 'medium' },
+          { id: 3, lat: 26.1550, lng: 91.7725, radius_m: 700, level: 'heavy' },
+          { id: 4, lat: 26.1620, lng: 91.7580, radius_m: 900, level: 'medium' },
+          { id: 5, lat: 26.1150, lng: 91.7225, radius_m: 500, level: 'heavy' }
+        ].map((zone) => (
+          <Circle
+            key={zone.id}
+            center={[zone.lat, zone.lng]}
+            radius={zone.radius_m}
+            pathOptions={{
+              fillColor: zone.level === 'heavy' ? '#ef4444' : '#22c55e',
+              fillOpacity: zone.level === 'heavy' ? 0.5 : 0.25,
+              color: 'transparent' // visual only
+            }}
+            interactive={false} // no popups/click handlers
+          />
+        ))}
 
-        {/* Climate Risk Markers on Flagged Legs */}
-        {routeResult?.legs?.filter((leg) => leg.climate_risk_flag).map((leg, idx) => {
-          const midLat = (leg.from_lat + leg.to_lat) / 2.0;
-          const midLng = (leg.from_lng + leg.to_lng) / 2.0;
-          return (
-            <Marker
-              key={`risk-leg-${idx}`}
-              position={[midLat, midLng]}
-              icon={riskWarningIcon}
-            >
-              <Popup>
-                <div className="p-1.5 text-slate-900 text-xs max-w-xs">
-                  <div className="font-bold text-amber-700 flex items-center gap-1 mb-1">
-                    ⚠️ Climate-Risk Exposure Warning
-                  </div>
-                  <div className="font-semibold text-slate-800">
-                    Leg #{leg.sequence_order}: {leg.from_stop} → {leg.to_stop}
-                  </div>
-                  <div className="text-slate-700 mt-1 p-1 bg-amber-50 rounded border border-amber-200">
-                    {leg.climate_risk_note}
-                  </div>
-                  <div className="text-[9px] text-slate-500 mt-1 font-mono italic">
-                    Illustrative Risk Flag (Demo)
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* Optimized Path (Solid Emerald Green) */}
+        {optPolyline.length > 1 && (
+          <Polyline
+            positions={optPolyline}
+            pathOptions={{
+              color: '#10b981',
+              weight: 5,
+              opacity: 0.95,
+            }}
+          />
+        )}
       </MapContainer>
     </div>
   );

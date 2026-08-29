@@ -1,23 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { findLoadPoolMatches, acceptLoadPoolMatch } from '../../services/api';
+import {
+  MapPin,
+  Package,
+  CheckCircle2,
+  Zap,
+  Clock,
+  Truck,
+  Sparkles,
+  RefreshCw,
+  AlertTriangle,
+  Leaf,
+  ChevronRight,
+  Navigation,
+  ShieldCheck,
+  Award,
+} from 'lucide-react';
 
 export default function DriverTripFlow({ tripId, onComplete }) {
-  // State machine: DETAILS -> IN_PROGRESS -> NEXT_STOP_PICKUP -> PICKUP_ARRIVED 
-  // -> IN_PROGRESS_2 -> NEXT_STOP_DELIVERY -> DELIVERY_ARRIVED 
-  // -> RETURN_LOAD_ALERT -> (if match ACCEPTING) -> RETURN_TRIP -> TRIP_COMPLETE
   const [flowState, setFlowState] = useState('DETAILS');
   const [returnCandidate, setReturnCandidate] = useState(null);
   const [returnMatchData, setReturnMatchData] = useState(null);
   const [isAccepting, setIsAccepting] = useState(false);
   const [returnAccepted, setReturnAccepted] = useState(false);
 
-  // Mock initial trip data passed down
   const tripData = tripId || {
     origin: 'Shillong',
     destination: 'Guwahati',
     distance: '102 km',
     time: '2h 45m',
-    vehicle: 'Truck 01',
+    vehicle: 'NW Heavy Freightliner #101',
     cargo: '2,500 kg',
     co2: '82.4 kg'
   };
@@ -25,7 +37,6 @@ export default function DriverTripFlow({ tripId, onComplete }) {
   const checkReturnLoad = async () => {
     try {
       setFlowState('RETURN_LOAD_ALERT_LOADING');
-      // Vehicle 2 for MHCV
       const res = await findLoadPoolMatches(2);
       setReturnMatchData(res);
       const candidate = res?.matches?.find((m) => m.status === 'CANDIDATE' || m.status === 'PROPOSED') || res?.matches?.[0];
@@ -34,12 +45,10 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         setReturnCandidate(candidate);
         setFlowState('RETURN_LOAD_ALERT');
       } else {
-        // No match found, skip to complete
         setFlowState('TRIP_COMPLETE');
       }
     } catch (err) {
       console.warn('Return load check failed:', err);
-      // Skip on error to avoid blocking the driver
       setFlowState('TRIP_COMPLETE');
     }
   };
@@ -53,7 +62,6 @@ export default function DriverTripFlow({ tripId, onComplete }) {
       setFlowState('RETURN_LOAD_ACCEPTED');
     } catch (err) {
       console.error('Accept return load failed:', err);
-      // Even if it fails, move on
       setFlowState('TRIP_COMPLETE');
     } finally {
       setIsAccepting(false);
@@ -61,342 +69,381 @@ export default function DriverTripFlow({ tripId, onComplete }) {
   };
 
   const renderDetails = () => (
-    <div className="mobile-card">
-      <h3 className="mobile-card-title text-center" style={{ marginBottom: '1.5rem', fontSize: '1.3rem' }}>
-        TRIP DETAILS
-      </h3>
-      
-      <div className="progress-list" style={{ marginLeft: '1rem', borderLeft: '2px solid #475569', paddingLeft: '1.5rem' }}>
-        <div className="progress-item" style={{ position: 'relative' }}>
-          <span style={{ position: 'absolute', left: '-2.15rem', top: '-2px', fontSize: '1.5rem' }}>📍</span>
+    <div className="bg-[#121722]/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        <div>
+          <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
+            <Navigation className="w-5 h-5 text-emerald-400" /> Active Trip Itinerary & Manifest
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">Optimized Multi-Stop Route Plan</p>
+        </div>
+        <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-bold font-mono">
+          TRIP #DRV-8821
+        </span>
+      </div>
+
+      {/* Progress Timeline Nodes */}
+      <div className="space-y-4 relative pl-6 border-l-2 border-slate-800 ml-2">
+        <div className="relative group">
+          <span className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-emerald-500 border-4 border-[#121722] shadow-md shadow-emerald-500/50"></span>
           <div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>FROM</div>
-            <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>{tripData.origin}</div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">ORIGIN PICKUP</span>
+            <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 mt-0.5">
+              <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {tripData.origin} Logistics Hub
+            </h4>
           </div>
         </div>
-        <div className="progress-item" style={{ position: 'relative', marginTop: '1.5rem' }}>
-          <span style={{ position: 'absolute', left: '-2.15rem', top: '-2px', fontSize: '1.5rem' }}>📦</span>
+
+        <div className="relative group pt-2">
+          <span className="absolute -left-[31px] top-2.5 w-4 h-4 rounded-full bg-cyan-500 border-4 border-[#121722] shadow-md shadow-cyan-500/50"></span>
           <div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>STOP 1</div>
-            <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>Pickup</div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">WAYPOINT / STOP 1</span>
+            <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 mt-0.5">
+              <Package className="w-3.5 h-3.5 text-cyan-400" /> Cargo Verification & Seal Check
+            </h4>
           </div>
         </div>
-        <div className="progress-item" style={{ position: 'relative', marginTop: '1.5rem' }}>
-          <span style={{ position: 'absolute', left: '-2.15rem', top: '-2px', fontSize: '1.5rem' }}>🏁</span>
+
+        <div className="relative group pt-2">
+          <span className="absolute -left-[31px] top-2.5 w-4 h-4 rounded-full bg-amber-400 border-4 border-[#121722] shadow-md shadow-amber-400/50"></span>
           <div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>STOP 2</div>
-            <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>Delivery</div>
-          </div>
-        </div>
-        <div className="progress-item" style={{ position: 'relative', marginTop: '1.5rem' }}>
-          <span style={{ position: 'absolute', left: '-2.15rem', top: '-2px', fontSize: '1.5rem' }}>📍</span>
-          <div>
-            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>TO</div>
-            <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>{tripData.destination}</div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">FINAL DESTINATION</span>
+            <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 mt-0.5">
+              <MapPin className="w-3.5 h-3.5 text-amber-400" /> {tripData.destination} Commerce Depot
+            </h4>
           </div>
         </div>
       </div>
 
-      <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #475569' }}>
-        <div className="mobile-data-row">
-          <span className="label">Distance</span>
-          <span className="value">{tripData.distance}</span>
+      {/* Manifest Summary */}
+      <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 space-y-2.5 text-xs">
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Distance</span>
+          <span className="font-bold text-slate-100 font-mono">{tripData.distance}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">Estimated time</span>
-          <span className="value">{tripData.time}</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Est. Drive Time</span>
+          <span className="font-bold text-amber-300 font-mono">{tripData.time}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">Vehicle</span>
-          <span className="value">{tripData.vehicle}</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Vehicle Unit</span>
+          <span className="font-bold text-slate-100">{tripData.vehicle}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">Cargo</span>
-          <span className="value">{tripData.cargo}</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Cargo Weight</span>
+          <span className="font-bold text-emerald-400 font-mono">{tripData.cargo}</span>
         </div>
       </div>
 
-      <button className="mobile-btn mobile-btn-primary" onClick={() => setFlowState('IN_PROGRESS')}>
-        [ START TRIP ]
+      <button
+        onClick={() => setFlowState('IN_PROGRESS')}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+      >
+        <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
+        Begin Active Route Execution
       </button>
     </div>
   );
 
   const renderInProgress = (stage) => (
-    <div className="mobile-card text-center" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-      <span className="badge-pill badge-green" style={{ display: 'inline-block', marginBottom: '1rem' }}>
-        TRIP IN PROGRESS
+    <div className="bg-[#121722]/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 text-center">
+      <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black inline-flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        ROUTE EXECUTION IN PROGRESS
       </span>
-      <h3 style={{ fontSize: '1.5rem', marginBottom: '2rem' }}>
-        {tripData.origin} <span style={{ color: '#64748b' }}>➔</span> {tripData.destination}
-      </h3>
 
-      <div style={{ textAlign: 'left', background: '#0f172a', padding: '1.5rem', borderRadius: '12px' }}>
-        <p className="mobile-p" style={{ fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold' }}>Progress:</p>
-        
-        <div className={`progress-item ${stage > 0 ? 'done' : 'active'}`}>
-          <span className="progress-icon">{stage > 0 ? '✓' : '●'}</span>
-          Pickup
-        </div>
-        <div className={`progress-item ${stage > 1 ? 'done' : (stage === 1 ? 'active' : '')}`}>
-          <span className="progress-icon">{stage > 1 ? '✓' : (stage === 1 ? '●' : '○')}</span>
-          Delivery
-        </div>
-        <div className={`progress-item ${stage > 2 ? 'done' : (stage === 2 ? 'active' : '')}`}>
-          <span className="progress-icon">{stage > 2 ? '✓' : (stage === 2 ? '●' : '○')}</span>
-          Complete
+      <div>
+        <h3 className="text-xl font-black text-slate-100 flex items-center justify-center gap-2">
+          {tripData.origin} <ChevronRight className="w-5 h-5 text-slate-500" /> {tripData.destination}
+        </h3>
+        <p className="text-xs text-slate-400 font-medium mt-1">Live Telemetry Connected • GPS Active</p>
+      </div>
+
+      <div className="bg-[#0B0E14]/80 p-5 rounded-xl border border-slate-800/80 text-left space-y-3">
+        <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Milestone Progress:</p>
+
+        <div className="space-y-2 text-xs">
+          <div className={`p-3 rounded-lg border flex items-center gap-2.5 font-bold transition-all ${
+            stage > 0
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-slate-900 border-slate-800 text-amber-400'
+          }`}>
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Pickup at {tripData.origin} Hub</span>
+          </div>
+
+          <div className={`p-3 rounded-lg border flex items-center gap-2.5 font-bold transition-all ${
+            stage > 1
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : (stage === 1 ? 'bg-slate-900 border-slate-800 text-amber-400' : 'bg-slate-900/40 border-slate-800/40 text-slate-500')
+          }`}>
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Delivery at {tripData.destination} Depot</span>
+          </div>
+
+          <div className={`p-3 rounded-lg border flex items-center gap-2.5 font-bold transition-all ${
+            stage > 2
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-slate-900/40 border-slate-800/40 text-slate-500'
+          }`}>
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Trip Audit & Final Completion</span>
+          </div>
         </div>
       </div>
 
-      <button 
-        className="mobile-btn mobile-btn-primary" 
-        style={{ marginTop: '2rem' }}
+      <button
         onClick={() => setFlowState(stage === 0 ? 'NEXT_STOP_PICKUP' : 'NEXT_STOP_DELIVERY')}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        [ VIEW NEXT STOP ]
+        <MapPin className="w-4 h-4 text-slate-950" />
+        View Next Waypoint Details
       </button>
     </div>
   );
 
   const renderNextStop = (type) => (
-    <div className="mobile-card text-center" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-      <h3 className="mobile-card-title text-center" style={{ marginBottom: '1.5rem', fontSize: '1.3rem', color: '#94a3b8' }}>
-        NEXT STOP
-      </h3>
+    <div className="bg-[#121722]/90 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center space-y-6">
+      <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 block">UPCOMING WAYPOINT</span>
       
-      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📍</div>
-      <h2 style={{ fontSize: '1.8rem', color: '#f8fafc', marginBottom: '2rem' }}>
-        {type === 'PICKUP' ? `${tripData.origin} Hub` : `${tripData.destination} Depot`}
-      </h2>
+      <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+        <MapPin className="w-8 h-8 text-emerald-400" />
+      </div>
 
-      <div style={{ textAlign: 'left', background: '#0f172a', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-        <div className="mobile-data-row">
-          <span className="label">Distance</span>
-          <span className="value">{type === 'PICKUP' ? '12 km' : '90 km'}</span>
+      <div>
+        <h2 className="text-2xl font-black text-slate-100">
+          {type === 'PICKUP' ? `${tripData.origin} Logistics Hub` : `${tripData.destination} Commerce Depot`}
+        </h2>
+        <p className="text-xs text-slate-400 font-medium mt-1">Confirmed Waypoint Location</p>
+      </div>
+
+      <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 text-left space-y-2.5 text-xs">
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Distance Remaining</span>
+          <span className="font-bold text-slate-100 font-mono">{type === 'PICKUP' ? '12 km' : '90 km'}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">Estimated time</span>
-          <span className="value">{type === 'PICKUP' ? '25 min' : '2h 20m'}</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Est. Arrival</span>
+          <span className="font-bold text-amber-300 font-mono">{type === 'PICKUP' ? '25 min' : '2h 20m'}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">Cargo</span>
-          <span className="value">{tripData.cargo}</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Cargo Manifest</span>
+          <span className="font-bold text-emerald-400 font-mono">{tripData.cargo}</span>
         </div>
       </div>
 
-      <button 
-        className="mobile-btn mobile-btn-primary"
+      <button
         onClick={() => setFlowState(type === 'PICKUP' ? 'PICKUP_ARRIVED' : 'DELIVERY_ARRIVED')}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        [ MARK ARRIVED ]
+        <CheckCircle2 className="w-4 h-4 text-slate-950" />
+        Mark Arrival at Waypoint
       </button>
     </div>
   );
 
   const renderArrived = (type) => (
-    <div className="mobile-card text-center" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✅</div>
-      <h2 style={{ fontSize: '2rem', color: '#10b981', marginBottom: '2rem' }}>
-        ARRIVED
-      </h2>
+    <div className="bg-[#121722]/90 border-2 border-emerald-500/40 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+      <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+        <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+      </div>
 
-      <button 
-        className="mobile-btn mobile-btn-primary"
+      <div>
+        <h2 className="text-2xl font-black text-emerald-400">WAYPOINT ARRIVAL CONFIRMED</h2>
+        <p className="text-xs text-slate-300 mt-1 font-semibold">Location verified via GPS Telemetry</p>
+      </div>
+
+      <button
         onClick={() => {
           if (type === 'PICKUP') {
             setFlowState('IN_PROGRESS_2');
           } else {
-            // After delivery complete, check for return load
             checkReturnLoad();
           }
         }}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        [ MARK {type} COMPLETE ]
+        <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
+        Confirm {type} Complete & Continue
       </button>
     </div>
   );
 
   const renderReturnLoadAlert = () => (
-    <div className="mobile-card text-center" style={{ paddingTop: '2rem', paddingBottom: '2rem', border: '2px solid #fbbf24' }}>
-      <h3 style={{ color: '#fbbf24', fontSize: '1.5rem', marginBottom: '1rem' }}>
-        📦 RETURN LOAD AVAILABLE
-      </h3>
-      <p style={{ color: '#f8fafc', fontSize: '1.1rem', marginBottom: '1.5rem' }}>
-        "Your vehicle may return empty."
-      </p>
-      <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
-        EcoLogix found a shipment that fits your return journey.
-      </p>
+    <div className="bg-[#121722]/90 border-2 border-amber-400/60 rounded-2xl p-6 shadow-2xl text-center space-y-5 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 to-yellow-500"></div>
 
-      <div style={{ textAlign: 'left', background: '#0f172a', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-        <div className="mobile-data-row">
-          <span className="label">FROM</span>
-          <span className="value">{returnMatchData?.return_route?.origin || tripData.destination}</span>
+      <div className="flex items-center justify-center gap-2 text-amber-400 text-sm font-extrabold uppercase tracking-wider">
+        <Sparkles className="w-5 h-5" />
+        <span>Return Load Match Opportunity</span>
+      </div>
+
+      <div>
+        <h3 className="text-xl font-black text-slate-100">Avoid Empty Return Journey!</h3>
+        <p className="text-xs text-slate-400 mt-1">EcoLogix matched a verified return shipment along your backhaul route.</p>
+      </div>
+
+      <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 text-left space-y-2.5 text-xs">
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Origin</span>
+          <span className="font-bold text-slate-100">{returnMatchData?.return_route?.origin || tripData.destination}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">TO</span>
-          <span className="value">{returnMatchData?.return_route?.destination || tripData.origin}</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Destination</span>
+          <span className="font-bold text-slate-100">{returnMatchData?.return_route?.destination || tripData.origin}</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">WEIGHT</span>
-          <span className="value">{returnCandidate?.shipment_weight_kg || '400'} kg</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Load Weight</span>
+          <span className="font-bold text-emerald-400 font-mono">{returnCandidate?.shipment_weight_kg || '400'} kg</span>
         </div>
-        <div className="mobile-data-row" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #334155' }}>
-          <span className="label">EXTRA DISTANCE</span>
-          <span className="value text-yellow">+{returnCandidate?.detour_distance_km || '6'} km</span>
+        <div className="flex justify-between items-center text-slate-300 pt-2 border-t border-slate-800/60">
+          <span className="text-slate-400 font-medium">Detour Distance</span>
+          <span className="font-bold text-amber-300 font-mono">+{returnCandidate?.detour_distance_km || '6'} km</span>
         </div>
-        <div className="mobile-data-row">
-          <span className="label">POTENTIAL CO₂ SAVED</span>
-          <span className="value text-green">{returnCandidate?.co2_saved_kg || '8.4'} kg</span>
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Potential CO₂ Saved</span>
+          <span className="font-bold text-emerald-400 font-mono">+{returnCandidate?.co2_saved_kg || '14.2'} kg</span>
         </div>
       </div>
 
-      <button 
-        className="mobile-btn mobile-btn-primary"
-        onClick={handleAcceptReturn}
-        disabled={isAccepting}
-      >
-        {isAccepting ? 'ADDING RETURN LOAD...' : '[ ACCEPT LOAD ]'}
-      </button>
-      <button 
-        className="mobile-btn mobile-btn-secondary"
-        onClick={() => setFlowState('RETURN_LOAD_SKIPPED')}
-        style={{ marginTop: '1rem' }}
-      >
-        [ SKIP ]
-      </button>
+      <div className="space-y-2 pt-2">
+        <button
+          onClick={handleAcceptReturn}
+          disabled={isAccepting}
+          className="w-full py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-xl shadow-amber-400/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+        >
+          {isAccepting ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+              Accepting & Assigning Load...
+            </>
+          ) : (
+            <>
+              <Package className="w-4 h-4 text-slate-950" />
+              Accept Return Load & Save CO₂
+            </>
+          )}
+        </button>
+        <button
+          onClick={() => setFlowState('RETURN_LOAD_SKIPPED')}
+          className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs font-bold border border-slate-800 transition-all cursor-pointer"
+        >
+          Skip Return Load
+        </button>
+      </div>
     </div>
   );
 
   const renderReturnLoadAccepted = () => (
-    <div className="mobile-card text-center" style={{ paddingTop: '3rem', paddingBottom: '3rem', border: '2px solid #10b981' }}>
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✅</div>
-      <h2 style={{ fontSize: '2rem', color: '#10b981', marginBottom: '1rem' }}>
-        RETURN LOAD ADDED
-      </h2>
-      <p style={{ color: '#cbd5e1', fontSize: '1.1rem', marginBottom: '2rem' }}>
-        "Your return journey now has a shipment."
-      </p>
+    <div className="bg-[#121722]/90 border-2 border-emerald-500/40 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+      <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+        <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+      </div>
 
-      <button 
-        className="mobile-btn mobile-btn-primary"
+      <div>
+        <h2 className="text-2xl font-black text-emerald-400">RETURN LOAD ASSIGNED</h2>
+        <p className="text-xs text-slate-300 mt-1 font-semibold">Backhaul capacity optimized! 14.2 kg CO₂ saved.</p>
+      </div>
+
+      <button
         onClick={() => setFlowState('RETURN_TRIP_DETAILS')}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        [ VIEW RETURN TRIP ]
+        <Navigation className="w-4 h-4 text-slate-950" />
+        View Return Trip Execution
       </button>
     </div>
   );
 
   const renderReturnLoadSkipped = () => (
-    <div className="mobile-card text-center" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
-      <h2 style={{ fontSize: '2rem', color: '#94a3b8', marginBottom: '1rem' }}>
-        RETURN LOAD SKIPPED
-      </h2>
-      <p style={{ color: '#cbd5e1', fontSize: '1.1rem', marginBottom: '2rem' }}>
-        Your vehicle will return empty.
-      </p>
+    <div className="bg-[#121722]/90 border border-slate-800 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+      <h2 className="text-xl font-black text-slate-300">Return Load Skipped</h2>
+      <p className="text-xs text-slate-400">Vehicle will proceed empty on return journey.</p>
 
-      <button 
-        className="mobile-btn mobile-btn-primary"
+      <button
         onClick={() => setFlowState('TRIP_COMPLETE')}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        [ CONTINUE TRIP ]
+        Continue & Finalize Trip
       </button>
     </div>
   );
 
   const renderReturnTripDetails = () => (
-    <div className="mobile-card">
-      <h3 className="mobile-card-title text-center" style={{ marginBottom: '1.5rem', fontSize: '1.3rem' }}>
-        RETURN TRIP
-      </h3>
-      <h2 style={{ fontSize: '1.5rem', color: '#f8fafc', textAlign: 'center', marginBottom: '2rem' }}>
-        {tripData.destination} <span style={{ color: '#64748b' }}>➔</span> {tripData.origin}
-      </h2>
-
-      <div style={{ textAlign: 'left', background: '#0f172a', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-        <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>📦 Return shipment</div>
-        <div className="mobile-data-row">
-          <span className="label">Weight</span>
-          <span className="value">{returnCandidate?.shipment_weight_kg || '400'} kg</span>
-        </div>
+    <div className="bg-[#121722]/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+      <div className="text-center">
+        <h3 className="text-sm font-extrabold uppercase tracking-wider text-emerald-400">RETURN BACKHAUL TRIP</h3>
+        <h2 className="text-xl font-black text-slate-100 mt-1">
+          {tripData.destination} <ChevronRight className="w-4 h-4 inline text-slate-500" /> {tripData.origin}
+        </h2>
       </div>
-      
-      <div className="progress-list" style={{ marginLeft: '1rem', borderLeft: '2px solid #475569', paddingLeft: '1.5rem' }}>
-        <div className="progress-item" style={{ position: 'relative' }}>
-          <span style={{ position: 'absolute', left: '-2.15rem', top: '-2px', fontSize: '1.5rem' }}>●</span>
-          <div>
-            <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>Pickup</div>
-          </div>
-        </div>
-        <div className="progress-item" style={{ position: 'relative', marginTop: '1.5rem' }}>
-          <span style={{ position: 'absolute', left: '-2.15rem', top: '-2px', fontSize: '1.5rem' }}>○</span>
-          <div>
-            <div style={{ color: '#f8fafc', fontWeight: 'bold' }}>Delivery</div>
-          </div>
+
+      <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 space-y-2 text-xs">
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400 font-medium">Return Shipment Weight</span>
+          <span className="font-bold text-emerald-400 font-mono">{returnCandidate?.shipment_weight_kg || '400'} kg</span>
         </div>
       </div>
 
-      <button 
-        className="mobile-btn mobile-btn-primary"
+      <button
         onClick={() => setFlowState('TRIP_COMPLETE')}
+        className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
       >
-        [ START RETURN TRIP ]
+        <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
+        Complete Return Backhaul
       </button>
     </div>
   );
 
   const renderComplete = () => {
-    const finalCO2 = returnAccepted 
-      ? (parseFloat(tripData.co2) + parseFloat(returnCandidate?.co2_saved_kg || 8.4)).toFixed(1)
-      : tripData.co2;
-
     return (
-      <div className="mobile-card text-center" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
-        <h2 style={{ fontSize: '2rem', color: '#10b981', marginBottom: '0.5rem' }}>
-          TRIP COMPLETE
-        </h2>
-        <h3 style={{ fontSize: '1.2rem', color: '#cbd5e1', marginBottom: '2rem' }}>
-          {tripData.origin} <span style={{ color: '#64748b' }}>➔</span> {tripData.destination}
-        </h3>
+      <div className="bg-[#121722]/90 border-2 border-emerald-500/40 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+        <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+          <Award className="w-10 h-10 text-emerald-400" />
+        </div>
 
-        <div style={{ textAlign: 'left', background: '#0f172a', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-          <div className="mobile-data-row">
-            <span className="label">Total Distance</span>
-            <span className="value">{tripData.distance}</span>
+        <div>
+          <h2 className="text-2xl font-black text-emerald-400">TRIP COMPLETED & SAVINGS AUDITED</h2>
+          <p className="text-xs text-slate-300 font-semibold mt-1">
+            {tripData.origin} ➔ {tripData.destination}
+          </p>
+        </div>
+
+        <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 space-y-2.5 text-xs text-left">
+          <div className="flex justify-between items-center text-slate-300">
+            <span className="text-slate-400 font-medium">Total Route Distance</span>
+            <span className="font-bold text-slate-100 font-mono">{tripData.distance}</span>
           </div>
-          <div className="mobile-data-row">
-            <span className="label">Estimated Fuel</span>
-            <span className="value">31.2 L</span>
+          <div className="flex justify-between items-center text-slate-300">
+            <span className="text-slate-400 font-medium">Estimated Fuel Burned</span>
+            <span className="font-bold text-slate-100 font-mono">31.2 L</span>
           </div>
-          <div className="mobile-data-row">
-            <span className="label">Estimated CO₂</span>
-            <span className="value">{tripData.co2}</span>
+          <div className="flex justify-between items-center text-slate-300">
+            <span className="text-slate-400 font-medium">Total CO₂ Output</span>
+            <span className="font-bold text-emerald-400 font-mono">{tripData.co2}</span>
           </div>
         </div>
 
-        <div style={{ textAlign: 'left', background: '#1e293b', border: '1px solid #10b981', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-          <h4 style={{ color: '#10b981', marginBottom: '1rem', fontSize: '1.1rem' }}>🌱 ECOLOGIX IMPACT</h4>
-          <div className="mobile-data-row">
-            <span className="label">CO₂ saved</span>
-            <span className="value text-green">14.2 kg</span>
+        <div className="bg-emerald-950/40 border border-emerald-500/30 p-4 rounded-xl text-left space-y-2 text-xs">
+          <h4 className="text-emerald-400 font-extrabold flex items-center gap-1.5">
+            <Leaf className="w-4 h-4" /> EcoLogix Certified Carbon Impact
+          </h4>
+          <div className="flex justify-between items-center text-slate-300">
+            <span className="text-slate-400">CO₂ Avoided</span>
+            <span className="font-black text-emerald-400 font-mono">14.2 kg</span>
           </div>
-          <div className="mobile-data-row">
-            <span className="label">Fuel saved</span>
-            <span className="value">3.4 L</span>
-          </div>
-          <div className="mobile-data-row">
-            <span className="label">Empty distance reduced</span>
-            <span className="value">{returnAccepted ? (returnCandidate?.detour_distance_km || '102') : '0'} km</span>
+          <div className="flex justify-between items-center text-slate-300">
+            <span className="text-slate-400">Fuel Saved</span>
+            <span className="font-black text-slate-100 font-mono">3.4 L</span>
           </div>
         </div>
 
-        <button 
-          className="mobile-btn mobile-btn-primary block-btn"
+        <button
           onClick={onComplete}
+          className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
-          [ DONE ]
+          <CheckCircle2 className="w-4 h-4 text-slate-950" />
+          Finish & Return to Dashboard
         </button>
       </div>
     );
@@ -412,8 +459,9 @@ export default function DriverTripFlow({ tripId, onComplete }) {
       {flowState === 'NEXT_STOP_DELIVERY' && renderNextStop('DELIVERY')}
       {flowState === 'DELIVERY_ARRIVED' && renderArrived('DELIVERY')}
       {flowState === 'RETURN_LOAD_ALERT_LOADING' && (
-        <div className="mobile-card text-center" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
-          <p>Checking for return shipments...</p>
+        <div className="bg-[#121722]/80 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
+          <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-slate-300">Checking for return load matches...</p>
         </div>
       )}
       {flowState === 'RETURN_LOAD_ALERT' && renderReturnLoadAlert()}

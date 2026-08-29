@@ -143,8 +143,22 @@ export default function AdminDashboard() {
 
   const handleAlphaChange = (newAlpha) => {
     setAlpha(newAlpha);
+    if (newAlpha === 1.0) {
+      setRouteCategory('faster');
+    } else {
+      setRouteCategory('greener');
+    }
     if (selectedVehicle && selectedShipmentIds.length > 0) {
       runOptimization(selectedVehicle.id, selectedShipmentIds, newAlpha);
+    }
+  };
+
+  const handleSelectRouteCategory = (category) => {
+    setRouteCategory(category);
+    const targetAlpha = category === 'faster' ? 1.0 : 0.5;
+    setAlpha(targetAlpha);
+    if (selectedVehicle && selectedShipmentIds.length > 0) {
+      runOptimization(selectedVehicle.id, selectedShipmentIds, targetAlpha);
     }
   };
 
@@ -168,7 +182,10 @@ export default function AdminDashboard() {
   const activeRouteResult = useMemo(() => {
     if (!routeResult) return null;
     if (routeCategory === 'faster') {
-      return { ...routeResult, ordered_stops: routeResult.baseline_stops };
+      return {
+        ...routeResult,
+        ordered_stops: routeResult.baseline_stops || routeResult.ordered_stops,
+      };
     }
     return routeResult;
   }, [routeResult, routeCategory]);
@@ -495,22 +512,24 @@ export default function AdminDashboard() {
             <div id="map-view" className="scroll-mt-20 md:scroll-mt-24 relative space-y-4">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => routeResult && setRouteCategory('faster')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                  type="button"
+                  onClick={() => handleSelectRouteCategory('faster')}
+                  className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm ${
                     routeCategory === 'faster'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
-                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                      : 'bg-[#111827] border-slate-700 text-slate-300 hover:bg-[#1F2937] hover:border-slate-600'
+                  }`}
                 >
                   Faster Route (Time-Optimized)
                 </button>
                 <button
-                  onClick={() => routeResult && setRouteCategory('greener')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                  type="button"
+                  onClick={() => handleSelectRouteCategory('greener')}
+                  className={`flex-1 py-2.5 px-4 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm ${
                     routeCategory === 'greener'
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                      : 'bg-[#111827] border-slate-700 text-slate-400 hover:bg-[#1F2937]'
-                  } ${!routeResult ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-extrabold shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                      : 'bg-[#111827] border-slate-700 text-slate-300 hover:bg-[#1F2937] hover:border-slate-600'
+                  }`}
                 >
                   Greener Route (Carbon-Aware)
                 </button>

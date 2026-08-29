@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 export function Header({ onOpenDemoGuide }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const isDriverMode = location.pathname.includes('/driver');
+  const isDriverMode = location.pathname.startsWith('/driver');
 
   return (
     <header className="sticky top-0 z-50 bg-[#0B0E14]/90 backdrop-blur-xl border-b border-slate-800/80 px-4 md:px-6 py-3 shadow-2xl">

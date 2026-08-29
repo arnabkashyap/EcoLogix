@@ -192,13 +192,6 @@ export default function App() {
                 compared to the standard route.
               </h2>
             </div>
-            <button
-              onClick={() => setShowDemoGuide(true)}
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-2 transition-all shadow-md cursor-pointer shrink-0"
-            >
-              <HelpCircle className="w-4 h-4 text-teal-400" />
-              Judge Demo Script
-            </button>
           </div>
         </div>
 

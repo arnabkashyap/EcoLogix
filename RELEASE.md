@@ -1,103 +1,137 @@
-# EcoLogix Release & Distribution Guide
+# EcoLogix — Windows & Android Release Builds
 
-This document outlines the build, packaging, signing, and distribution processes for EcoLogix native desktop and mobile platforms.
+This repository includes native shells around the `frontend/` React app so it can be packaged as a **Windows installer** (Tauri v2) and an **Android app** (Capacitor), alongside the existing web deployment.
 
----
+> **Web Deployment Integrity:** The existing web deployment on Vercel is unaffected. `npm run build` (with no flags) and the `vercel.json` build pipeline produce standard same-origin relative `/api/v1` requests with no extra environment variables required.
 
-## 1. Prerequisites & Architecture Overview
-
-The native desktop shell uses **Tauri v2** with a Rust-based webview host wrapping the Vite/React frontend.
-
-- **Frontend Native Build**: `npm run build:native` (loads `frontend/.env.native` pointing `VITE_API_BASE_URL` to `https://eco-logix.vercel.app/api/v1`).
-- **No Local Backend Process**: Native builds do not run a local Python interpreter or SQLite process; all API traffic routes securely over HTTPS to the deployed backend.
-- **Auth Preservation**: Uses the existing JWT-in-`localStorage` token store (`getStoredToken` / `setStoredToken`) in `frontend/src/services/api.js`.
+Both native shells point at the deployed FastAPI backend (`https://eco-logix.vercel.app/api/v1`) by default, configured via `frontend/.env.native`. Neither bundles a local Python process — see [Going Further](#going-further-bundling-the-backend-for-offline-desktop-use) if offline use becomes a requirement.
 
 ---
 
-## 2. Windows Desktop Release (Tauri)
+## 1. Repository Structure & What Was Added
 
-### Requirements:
-1. **Rust Toolchain**: Stable Rust (`rustup default stable`)
-2. **C++ Build Tools**: Visual Studio 2022 C++ Build Tools with English language pack (MSVC)
-3. **Node.js**: v18+ with `npm`
-
-### Step 1: Generate Brand Icons
-Place your 1024×1024 brand PNG (e.g. `icon.png`) and run:
-```bash
-cd frontend
-npm run tauri icon path/to/icon.png
 ```
-*Note: Tauri requires the generated files in `frontend/src-tauri/icons/` to build installers.*
+frontend/
+├── .env.native              # VITE_API_BASE_URL for native builds only
+├── src-tauri/               # Windows desktop shell (Tauri v2)
+│   ├── tauri.conf.json      # Window settings, bundle targets, hooks
+│   ├── Cargo.toml           # Rust package manifest
+│   ├── build.rs             # Tauri build script
+│   ├── src/main.rs          # Minimal desktop shell entrypoint
+│   └── icons/               # Multi-platform app icons (generated via tauri icon)
+├── capacitor.config.json    # Android shell configuration (Capacitor)
+└── android/                 # Android native project
+    ├── build.gradle
+    └── app/
+        ├── build.gradle     # Release signing configuration (env-driven)
+        └── src/main/AndroidManifest.xml
+.github/workflows/release.yml # Automated CI pipeline creating draft releases on git tags
+```
 
-### Step 2: Build Native Installers
+- **[frontend/src/services/api.js](file:///d:/WebDevProject/Tigma2026/frontend/src/services/api.js)** was updated to respect `VITE_API_BASE_URL` when set, falling back to relative `/api/v1` routes for web builds.
+- **Authentication**: Preserves the existing JWT-in-`localStorage` auth flow (`getStoredToken` / `setStoredToken`).
+
+---
+
+## 2. Windows — Local Desktop Build
+
+### Requirements
+- **Rust (Stable)** + **Cargo**: Install via [rustup.rs](https://rustup.rs/)
+- **Node.js**: v20+
+- **C++ Build Tools**: [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVC)
+
+### Build Steps
 ```bash
 cd frontend
+npm install
 npm run tauri:build
 ```
-This triggers:
-1. `beforeBuildCommand`: `npm run build:native` (compiles production React bundle with deployed API URL)
-2. `cargo build --release` (compiles Rust host)
-3. Windows installer generation:
-   - **MSI Installer**: `frontend/src-tauri/target/release/bundle/msi/EcoLogix_x.x.x_x64_en-US.msi`
-   - **NSIS Setup (.exe)**: `frontend/src-tauri/target/release/bundle/nsis/EcoLogix_x.x.x_x64-setup.exe`
+
+This compiles the React app via `npm run build:native` and outputs:
+- **MSI Installer**: `frontend/src-tauri/target/release/bundle/msi/*.msi`
+- **NSIS Executable**: `frontend/src-tauri/target/release/bundle/nsis/*.exe`
+
+### Before Shipping Publicly
+1. **App Icons**: Generate brand icons using `npm run tauri icon path/to/source.png` (requires 1024×1024 PNG/SVG).
+2. **Code Signing**: Unsigned builds trigger Windows SmartScreen warnings on first run. Configure `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` in CI secrets or sign locally with `signtool.exe`.
 
 ---
 
-## 3. Code Signing & Security (Windows SmartScreen)
+## 3. Android — Local Mobile Build
 
-### Unsigned Builds Notice
-Unsigned Windows `.exe` and `.msi` installers will trigger a **Windows Defender SmartScreen** prompt (*"Windows protected your PC — Unknown publisher"*). Users must click **More info** $\to$ **Run anyway** to proceed.
+### Requirements
+- **Android Studio** / Command-line Android SDK
+- **JDK 21** (Required by Capacitor 8 / Android compileSdk 36)
+- **Node.js**: v20+
 
-### CI/CD Code Signing Configuration
-To produce trusted, signed installers in CI (e.g. GitHub Actions / Azure Pipelines):
+### Build Steps
+```bash
+cd frontend
+npm install
+npm run build:native
+npx cap sync android
+```
 
-1. **Do NOT commit private keys, keystores, or certificates to the repository.**
-2. Set up code signing in CI using environment variables:
-   - `TAURI_SIGNING_PRIVATE_KEY`: Base64 encoded private key or certificate path.
-   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: Passphrase for the signing key.
-5. For Windows Authenticode / EV code signing:
-   - Use `signtool.exe` or Azure Trusted Signing in CI workflows configured via repository secrets.
+### Generate a Release Keystore (One-Time)
+```bash
+keytool -genkey -v -keystore ecologix-release.keystore \
+  -alias ecologix -keyalg RSA -keysize 2048 -validity 10000
+```
+> ⚠️ **IMPORTANT:** Never commit keystore files to version control. Store backups securely. Losing your keystore prevents releasing updates to the same Google Play listing.
+
+### Build Signed Release Packages
+```bash
+# In Bash / macOS / Linux:
+export ECOLOGIX_KEYSTORE_PATH=/path/to/ecologix-release.keystore
+export ECOLOGIX_KEYSTORE_PASSWORD=your_keystore_password
+export ECOLOGIX_KEY_ALIAS=ecologix
+export ECOLOGIX_KEY_PASSWORD=your_key_password
+
+# Build Play Store App Bundle (.aab):
+npm run android:build   # -> android/app/build/outputs/bundle/release/*.aab
+
+# Build Directly-Installable Release APK (.apk):
+npm run android:apk     # -> android/app/build/outputs/apk/release/*.apk
+```
+
+### Before Shipping Publicly
+1. **Splash & Icons**: Generate launcher icons via `npx @capacitor/assets generate --android` using `assets/icon.png` (1024×1024) and `assets/splash.png` (2732×2732).
+2. **Play Console Policy**: Complete the Play Console Data Safety form disclosing location/route data handling.
 
 ---
 
-## 4. Android Mobile Release (Capacitor)
+## 4. CI/CD Release Pipeline
 
-### Verifying Map in WebView
+The GitHub Actions workflow in [`.github/workflows/release.yml`](file:///.github/workflows/release.yml) automatically compiles and packages both platforms:
 
-Note: Map rendering with react-leaflet has been verified in an Android WebView. Gesture interactions (pinch-to-zoom and panning) have been manually tested inside a Capacitor emulator running Android 14. No workarounds disabling map interactivity are needed.
+1. **`windows` Job**: Builds the `.msi` installer and `.exe` NSIS setup.
+2. **`android` Job**: Uses JDK 21 to build both the `.apk` (direct installation) and `.aab` (Google Play bundle).
+3. **`release` Job**: Runs after both platform jobs complete on a git tag push (`v*.*.*`), downloading all 4 artifacts and creating a **Draft GitHub Release** with auto-generated release notes:
+   - `EcoLogix_x.x.x_x64_en-US.msi`
+   - `EcoLogix_x.x.x_x64-setup.exe`
+   - `app-release.apk`
+   - `app-release.aab`
 
-### Creating a Signing Keystore (One-time)
+> **Draft Release Safety:** Releases are published as **Drafts** by default so maintainers can review artifacts in the GitHub Releases UI before publishing.
 
-To generate the keystore required to sign the release AAB/APK:
+### Smoke-Testing in CI
+- Triggering `workflow_dispatch` (manual run) runs both build jobs and uploads workflow artifacts for testing without creating draft releases.
+- Pushing a version tag (`git tag v1.0.0 && git push --tags`) triggers the full release pipeline and publishes the draft release.
 
-```bash
-keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
-```
+### CI Repository Secrets
+Configure the following under **Settings → Secrets and variables → Actions**:
+- `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- `ECOLOGIX_KEYSTORE_BASE64` (Base64 encoded `.keystore` / `.jks` file)
+- `ECOLOGIX_KEYSTORE_PASSWORD`
+- `ECOLOGIX_KEY_ALIAS`
+- `ECOLOGIX_KEY_PASSWORD`
 
-**WARNING:** Never commit the keystore to version control. If you lose this keystore, you will lose the ability to publish updates to the same Play Store listing.
+---
 
-### Build Android Artifacts
+## 5. Going Further: Bundling the Backend for Offline Desktop Use
 
-To build the release APK (without signing variables, produces an unsigned build):
+The current desktop and mobile builds require network connectivity to `https://eco-logix.vercel.app/api/v1`. If fully offline desktop operation is required in the future:
 
-```bash
-cd frontend
-npm run android:apk
-```
-
-To build a signed App Bundle (.aab) for Google Play:
-
-```bash
-# In Bash:
-export ECOLOGIX_KEYSTORE_PATH=/path/to/my-release-key.jks
-export ECOLOGIX_KEYSTORE_PASSWORD=my_keystore_password
-export ECOLOGIX_KEY_ALIAS=my-key-alias
-export ECOLOGIX_KEY_PASSWORD=my_key_password
-
-# Or in PowerShell:
-# $env:ECOLOGIX_KEYSTORE_PATH="C:\path\to\my-release-key.jks"
-# ...
-
-cd frontend
-npm run android:build
-```
+1. **PyInstaller Binary**: Freeze `backend/` into a standalone binary (`ecologix-backend.exe`).
+2. **Tauri Sidecar**: Register the binary as an `externalBin` in `frontend/src-tauri/tauri.conf.json`.
+3. **Lifecycle Management**: Spawn the backend process from `frontend/src-tauri/src/main.rs` before opening the webview window, target `http://localhost:8000/api/v1`, and terminate the process when the window closes.

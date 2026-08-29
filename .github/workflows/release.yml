@@ -91,5 +91,38 @@ jobs:
       - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: android-app-bundle
-          path: frontend/android/app/build/outputs/bundle/release/*.aab
+          name: android-artifacts
+          path: |
+            frontend/android/app/build/outputs/apk/release/*.apk
+            frontend/android/app/build/outputs/bundle/release/*.aab
+
+  release:
+    name: Publish Draft Release
+    needs: [windows, android]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installers
+          path: ./artifacts/windows
+
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-artifacts
+          path: ./artifacts/android
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            ./artifacts/windows/*.msi
+            ./artifacts/windows/*.exe
+            ./artifacts/android/*.apk
+            ./artifacts/android/*.aab

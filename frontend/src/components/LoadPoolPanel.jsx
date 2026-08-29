@@ -27,7 +27,7 @@ export function LoadPoolPanel({ onMatchTriggered }) {
   };
 
   return (
-    <div className="glass-panel p-5 rounded-2xl border border-slate-800">
+    <div className="bg-[#0E131F] p-6 rounded-2xl border border-slate-800/80 shadow-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">

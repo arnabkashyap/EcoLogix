@@ -22,10 +22,10 @@ const userLocationIcon = L.divIcon({
 });
 
 
-function MapBoundsFitter({ points, shouldFit }) {
+function MapBoundsFitter({ points, trigger }) {
   const map = useMap();
   useEffect(() => {
-    if (!shouldFit) return;
+    if (!trigger) return;
     const validPoints = (points || []).filter(
       (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number'
     );
@@ -37,7 +37,7 @@ function MapBoundsFitter({ points, shouldFit }) {
         console.warn('Map bounds fit warning:', err);
       }
     }
-  }, [points, shouldFit, map]);
+  }, [trigger, map]); // Only trigger when 'trigger' changes
   return null;
 }
 
@@ -45,7 +45,7 @@ function MapRecenter({ targetCoords }) {
   const map = useMap();
   useEffect(() => {
     if (targetCoords && targetCoords.length >= 2) {
-      map.flyTo([targetCoords[0], targetCoords[1]], 13, { duration: 1.2 });
+      map.setView([targetCoords[0], targetCoords[1]], 13, { animate: true });
     }
   }, [targetCoords, map]);
   return null;
@@ -77,7 +77,7 @@ function MapFixer() {
   return null;
 }
 
-export function MapView({ routeResult, depot }) {
+export function MapView({ routeResult, depot, routeCategory, setRouteCategory }) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,15 +85,11 @@ export function MapView({ routeResult, depot }) {
   const [searchError, setSearchError] = useState('');
 
   const [isNavigating, setIsNavigating] = useState(false);
-  const [hasUserRequestedRoute, setHasUserRequestedRoute] = useState(false);
-  const routeCountRef = useRef(0);
+  const [routeFitTrigger, setRouteFitTrigger] = useState(0);
 
   useEffect(() => {
     if (routeResult) {
-      routeCountRef.current += 1;
-      if (routeCountRef.current > 1) {
-        setHasUserRequestedRoute(true);
-      }
+      setRouteFitTrigger(prev => prev + 1);
     }
   }, [routeResult]);
 
@@ -214,31 +210,55 @@ export function MapView({ routeResult, depot }) {
       : [26.1445, 91.7362];
 
   const optimizedStops = routeResult?.ordered_stops || [];
+  const [roadPolyline, setRoadPolyline] = useState([]);
 
-  const optPolyline = useMemo(() => {
-    if (!depot || !userLocation || typeof userLocation.lat !== 'number') return [];
-    
-    const fullRoute = optimizedStops.map(s => [s.lat, s.lng]);
-    if (fullRoute.length === 0) {
-      return [[userLocation.lat, userLocation.lng], [depot.lat, depot.lng]];
-    }
-
-    let closestIdx = 0;
-    let minDist = Infinity;
-    fullRoute.forEach((pt, idx) => {
-      const dist = Math.pow(pt[0] - userLocation.lat, 2) + Math.pow(pt[1] - userLocation.lng, 2);
-      if (dist < minDist) {
-        minDist = dist;
-        closestIdx = idx;
+  useEffect(() => {
+    async function fetchRoadRoute() {
+      const fullRoute = optimizedStops.map(s => [s.lat, s.lng]);
+      if (fullRoute.length === 0) {
+        setRoadPolyline([]);
+        return;
       }
-    });
+      
+      const pts = [];
+      if (userLocation && typeof userLocation.lat === 'number') {
+        pts.push([userLocation.lat, userLocation.lng]);
+      }
+      
+      // We'll just build a route from userLocation -> all stops -> depot
+      pts.push(...fullRoute);
+      
+      if (pts.length === 0 || pts[pts.length - 1][0] !== depot.lat || pts[pts.length - 1][1] !== depot.lng) {
+        pts.push([depot.lat, depot.lng]);
+      }
 
-    return [
-      [userLocation.lat, userLocation.lng],
-      ...fullRoute.slice(closestIdx + 1),
-      [depot.lat, depot.lng]
-    ];
-  }, [userLocation, depot, optimizedStops]);
+      // OSRM expects longitude,latitude
+      const coords = pts.map(p => `${p[1]},${p[0]}`).join(';');
+      
+      try {
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+        const data = await res.json();
+        if (data.routes && data.routes.length > 0) {
+          const coordsArr = data.routes[0].geometry.coordinates;
+          // OSRM returns [lng, lat], Leaflet wants [lat, lng]
+          const leafletCoords = coordsArr.map(c => [c[1], c[0]]);
+          setRoadPolyline(leafletCoords);
+        } else {
+          setRoadPolyline(pts); // fallback to straight lines
+        }
+      } catch (err) {
+        console.error("OSRM fetch error:", err);
+        setRoadPolyline(pts); // fallback
+      }
+    }
+    
+    fetchRoadRoute();
+  }, [optimizedStops, userLocation, depot]);
+
+  // For the actual polyline we render, use the roadPolyline
+  const optPolyline = useMemo(() => {
+    return roadPolyline;
+  }, [roadPolyline]);
 
   const hasRiskFlag = routeResult?.legs?.some((l) => l.climate_risk_flag);
 
@@ -253,13 +273,38 @@ export function MapView({ routeResult, depot }) {
   }, [routeResult, optimizedStops, userLocation]);
 
   return (
-    <div className="relative w-full h-[520px] rounded-2xl overflow-hidden glass-panel border border-slate-800 shadow-2xl">
-      {/* Floating Map Legend & Search Controls Overlay */}
-      <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2 max-w-[90%] sm:max-w-md">
-        <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      {/* Top Route Mode Switcher Bar */}
+      <div className="grid grid-cols-2 gap-2 bg-[#121722] p-1.5 rounded-xl border border-slate-800">
+        <button
+          onClick={() => setRouteCategory && setRouteCategory('faster')}
+          className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            routeCategory === 'faster'
+              ? 'bg-slate-700 text-slate-100 shadow-md border border-slate-600'
+              : 'bg-[#181E2B] text-slate-400 hover:text-slate-200 hover:bg-[#1E2638]'
+          }`}
+        >
+          Faster Route (Time-Optimized)
+        </button>
+        <button
+          onClick={() => setRouteCategory && setRouteCategory('greener')}
+          className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            routeCategory === 'greener' || !routeCategory
+              ? 'bg-[#10B981] text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)] font-black'
+              : 'bg-[#181E2B] text-slate-400 hover:text-slate-200 hover:bg-[#1E2638]'
+          }`}
+        >
+          Greener Route (Carbon-Aware)
+        </button>
+      </div>
+
+      {/* Map Container */}
+      <div className="relative w-full h-[500px] rounded-2xl overflow-hidden glass-panel border border-slate-800/80 shadow-2xl">
+        {/* Floating Overlay Controls inside Map */}
+        <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2">
           <button
             onClick={handleRecenter}
-            className="px-3 py-2 rounded-xl bg-[#111827]/90 hover:bg-[#1F2937] text-slate-300 hover:text-emerald-400 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
+            className="px-3.5 py-2 rounded-xl bg-[#0B0E14]/85 hover:bg-[#161B26] text-slate-200 border border-slate-700/80 text-xs font-bold flex items-center gap-2 shadow-xl transition-all cursor-pointer backdrop-blur-md"
             title="Recenter on my live location"
           >
             <Crosshair className="w-4 h-4 text-emerald-400" />
@@ -267,17 +312,16 @@ export function MapView({ routeResult, depot }) {
           </button>
           <button
             onClick={() => setIsNavigating(!isNavigating)}
-            className={`px-3 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
               isNavigating 
                 ? 'bg-rose-500 hover:bg-rose-400 text-slate-950' 
-                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                : 'bg-[#10B981] hover:bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
             }`}
           >
             <Navigation className="w-4 h-4" />
             <span>{isNavigating ? 'Stop Navigation' : 'Start Navigation'}</span>
           </button>
         </div>
-      </div>
 
       {/* Leaflet Map */}
       <MapContainer
@@ -303,7 +347,7 @@ export function MapView({ routeResult, depot }) {
         <MapClickHandler onLocationSelect={handleManualSelect} />
 
         {/* Fit Map Bounds to Route & User Location when user explicitly requests/optimizes route */}
-        <MapBoundsFitter points={boundsPoints} shouldFit={hasUserRequestedRoute} />
+        <MapBoundsFitter points={boundsPoints} trigger={routeFitTrigger} />
 
         {/* User Location Marker (Draggable) */}
         {userLocation && (
@@ -378,6 +422,7 @@ export function MapView({ routeResult, depot }) {
         )}
       </MapContainer>
     </div>
+  </div>
   );
 }
 

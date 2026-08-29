@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 import MobileApp from './mobile/MobileApp';
 import './index.css';
@@ -9,13 +9,17 @@ function MainApp() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Robust path detection for driver portal (/driver, /driver/, /driver?...)
+  const isDriverPath = location.pathname.startsWith('/driver');
+
   return (
-    <Routes>
-      <Route path="/driver/*" element={<MobileApp onExit={() => navigate('/')} />} />
-      <Route path="/driver" element={<MobileApp onExit={() => navigate('/')} />} />
-      <Route path="/" element={<AdminDashboard />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <div key={location.pathname}>
+      {isDriverPath ? (
+        <MobileApp onExit={() => navigate('/')} />
+      ) : (
+        <AdminDashboard />
+      )}
+    </div>
   );
 }
 

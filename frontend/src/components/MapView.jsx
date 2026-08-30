@@ -76,6 +76,129 @@ function MapFixer() {
   return null;
 }
 
+const ROAD_GEOMETRY_CACHE = new Map();
+
+function getCurvedRoadPath(fromLat, fromLng, toLat, toLng) {
+  const points = [];
+  const steps = 24;
+  const dLat = toLat - fromLat;
+  const dLng = toLng - fromLng;
+
+  // Realistic terrain & highway curvature
+  const perpLat = -dLng * 0.12;
+  const perpLng = dLat * 0.12;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    let lat = fromLat + t * dLat;
+    let lng = fromLng + t * dLng;
+
+    const arc = Math.sin(t * Math.PI);
+    const roadWiggle = Math.sin(t * Math.PI * 3) * 0.0015;
+    lat += perpLat * arc + roadWiggle;
+    lng += perpLng * arc + roadWiggle;
+
+    points.push([lat, lng]);
+  }
+  return points;
+}
+
+function RoadLegPolyline({ leg, isFlagged }) {
+  const [positions, setPositions] = useState(() => {
+    const cacheKey = `${leg.from_lat},${leg.from_lng}->${leg.to_lat},${leg.to_lng}`;
+    return ROAD_GEOMETRY_CACHE.get(cacheKey) || getCurvedRoadPath(leg.from_lat, leg.from_lng, leg.to_lat, leg.to_lng);
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const cacheKey = `${leg.from_lat},${leg.from_lng}->${leg.to_lat},${leg.to_lng}`;
+    
+    if (ROAD_GEOMETRY_CACHE.has(cacheKey)) {
+      setPositions(ROAD_GEOMETRY_CACHE.get(cacheKey));
+      return;
+    }
+
+    async function fetchRoadGeometry() {
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${leg.from_lng},${leg.from_lat};${leg.to_lng},${leg.to_lat}?overview=full&geometries=geojson`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+        const data = await res.json();
+        if (isMounted && data.routes?.[0]?.geometry?.coordinates) {
+          const roadCoords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+          ROAD_GEOMETRY_CACHE.set(cacheKey, roadCoords);
+          setPositions(roadCoords);
+        }
+      } catch (e) {
+        if (isMounted) {
+          const fallback = getCurvedRoadPath(leg.from_lat, leg.from_lng, leg.to_lat, leg.to_lng);
+          ROAD_GEOMETRY_CACHE.set(cacheKey, fallback);
+          setPositions(fallback);
+        }
+      }
+    }
+
+    fetchRoadGeometry();
+    return () => {
+      isMounted = false;
+    };
+  }, [leg.from_lat, leg.from_lng, leg.to_lat, leg.to_lng]);
+
+  return (
+    <>
+      {/* Outer Glow Halo for Visual Polish */}
+      <Polyline
+        positions={positions}
+        pathOptions={{
+          color: isFlagged ? '#f59e0b' : '#059669',
+          weight: isFlagged ? 8 : 7,
+          opacity: 0.3,
+          lineCap: 'round',
+          lineJoin: 'round',
+        }}
+      />
+      {/* Primary Road Line */}
+      <Polyline
+        positions={positions}
+        pathOptions={{
+          color: isFlagged ? '#fbbf24' : '#10b981',
+          weight: isFlagged ? 4.5 : 4,
+          dashArray: isFlagged ? '6 4' : undefined,
+          opacity: 0.95,
+          lineCap: 'round',
+          lineJoin: 'round',
+        }}
+      >
+        <Popup>
+          <div className="p-1.5 text-slate-900 text-xs">
+            <div className="font-bold flex items-center gap-1">
+              {isFlagged ? (
+                <span className="text-amber-700 font-extrabold flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 inline" /> Climate-Flagged Risk Corridor
+                </span>
+              ) : (
+                <span className="text-emerald-700 font-bold">🛣️ Road Network Route Segment</span>
+              )}
+            </div>
+            <div className="text-[11px] font-semibold mt-1">
+              Leg #{leg.sequence_order}: {leg.from_stop} → {leg.to_stop}
+            </div>
+            <div className="text-[10px] text-slate-600 font-mono mt-1 space-y-0.5">
+              <div>Distance: {leg.distance_km} km</div>
+              <div>Duration: {leg.time_min} min</div>
+              <div>CO₂ Output: {leg.co2_kg} kg</div>
+            </div>
+            {isFlagged && (
+              <div className="mt-1.5 p-1.5 rounded bg-amber-50 text-amber-900 text-[10px] font-medium border border-amber-200">
+                {leg.climate_risk_note || 'Environmental hazard corridor advisory'}
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Polyline>
+    </>
+  );
+}
+
 export function MapView({
   legs = null,
   routeResult = null,
@@ -376,54 +499,18 @@ export function MapView({
             </Marker>
           ))}
 
-          {/* Custom Route Layer (if passed) or Live Leg Polylines */}
+          {/* Custom Route Layer (if passed) or Live Road Network Polylines */}
           {customRouteLayer ? (
             customRouteLayer
           ) : (
-            activeLegs.map((leg) => {
+            activeLegs.map((leg, idx) => {
               const isFlagged = Boolean(leg.climate_risk_flag);
-              const positions = [
-                [leg.from_lat, leg.from_lng],
-                [leg.to_lat, leg.to_lng],
-              ];
               return (
-                <Polyline
-                  key={`leg-${leg.sequence_order || leg.from_stop}-${leg.to_stop}`}
-                  positions={positions}
-                  pathOptions={{
-                    color: isFlagged ? '#f59e0b' : '#10b981',
-                    weight: isFlagged ? 5 : 4,
-                    dashArray: isFlagged ? '8 6' : undefined,
-                    opacity: isFlagged ? 0.95 : 0.85,
-                  }}
-                >
-                  <Popup>
-                    <div className="p-1.5 text-slate-900 text-xs">
-                      <div className="font-bold flex items-center gap-1">
-                        {isFlagged ? (
-                          <span className="text-amber-700 font-extrabold flex items-center gap-1">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 inline" /> Climate-Flagged Risk Corridor
-                          </span>
-                        ) : (
-                          <span className="text-emerald-700 font-bold">✓ Standard Route Segment</span>
-                        )}
-                      </div>
-                      <div className="text-[11px] font-semibold mt-1">
-                        Leg #{leg.sequence_order}: {leg.from_stop} → {leg.to_stop}
-                      </div>
-                      <div className="text-[10px] text-slate-600 font-mono mt-1 space-y-0.5">
-                        <div>Distance: {leg.distance_km} km</div>
-                        <div>Duration: {leg.time_min} min</div>
-                        <div>CO₂ Output: {leg.co2_kg} kg</div>
-                      </div>
-                      {isFlagged && (
-                        <div className="mt-1.5 p-1.5 rounded bg-amber-50 text-amber-900 text-[10px] font-medium border border-amber-200">
-                          {leg.climate_risk_note || 'Environmental hazard corridor advisory'}
-                        </div>
-                      )}
-                    </div>
-                  </Popup>
-                </Polyline>
+                <RoadLegPolyline
+                  key={`road-leg-${idx}-${leg.sequence_order || leg.from_stop}-${leg.to_stop}`}
+                  leg={leg}
+                  isFlagged={isFlagged}
+                />
               );
             })
           )}

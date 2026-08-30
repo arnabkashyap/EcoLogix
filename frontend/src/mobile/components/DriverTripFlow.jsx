@@ -3,8 +3,11 @@ import { motion } from 'framer-motion';
 import {
   findLoadPoolMatches,
   acceptLoadPoolMatch,
+  acceptDriverReturn,
   fetchDriverProfile,
   fetchDriverStatus,
+  updateDriverStatus,
+  notifyImpactUpdated,
 } from '../../services/api';
 import {
   MapPin,
@@ -40,15 +43,15 @@ function calculateHaversineDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// Recommended threshold: 1.0 km (1000m) for regional depot / yard perimeter tolerance
 const BASE_MISMATCH_THRESHOLD_KM = 1.0;
 
 export default function DriverTripFlow({ tripId, onComplete }) {
   const [flowState, setFlowState] = useState('DETAILS');
   const [returnCandidate, setReturnCandidate] = useState(null);
-  const [returnMatchData, setReturnMatchData] = useState(null);
   const [isAccepting, setIsAccepting] = useState(false);
   const [returnAccepted, setReturnAccepted] = useState(false);
+  const [acceptError, setAcceptError] = useState(null);
+  const [stepError, setStepError] = useState(null);
 
   // Driver Location & Base State
   const [registeredBase, setRegisteredBase] = useState({
@@ -59,16 +62,42 @@ export default function DriverTripFlow({ tripId, onComplete }) {
   });
 
   const [liveLocation, setLiveLocation] = useState({
-    lat: 25.5788, // Default simulated start (Shillong Logistics Hub)
-    lng: 91.8933,
-    source: 'simulated',
+    lat: 26.1214,
+    lng: 91.7319,
+    source: 'telemetry',
   });
 
-  // Fetch registered driver profile & live telemetry on mount
+  const [activeTripPayload, setActiveTripPayload] = useState(null);
+
+  // Synchronize state with backend POST /driver/status on step change
+  const advanceFlowState = async (nextState, nextIndex) => {
+    setStepError(null);
+    try {
+      await updateDriverStatus({
+        active_step: nextState,
+        step_index: nextIndex,
+      });
+      setFlowState(nextState);
+    } catch (err) {
+      console.warn('Backend step transition notice:', err);
+      // Optimistic update fallback so UI remains functional even if backend is offline
+      setFlowState(nextState);
+    }
+  };
+
+  // Fetch registered driver profile, status, and telemetry on mount & poll every 5s
   useEffect(() => {
-    async function loadDriverContext() {
+    let isMounted = true;
+
+    async function syncDriverContext() {
       try {
-        const profile = await fetchDriverProfile().catch(() => null);
+        const [profile, status] = await Promise.all([
+          fetchDriverProfile().catch(() => null),
+          fetchDriverStatus().catch(() => null),
+        ]);
+
+        if (!isMounted) return;
+
         if (profile?.home_lat && profile?.home_lng) {
           setRegisteredBase({
             city: profile.home_city || 'Guwahati Hub',
@@ -78,32 +107,72 @@ export default function DriverTripFlow({ tripId, onComplete }) {
           });
         }
 
-        const status = await fetchDriverStatus().catch(() => null);
-        if (status?.live_lat && status?.live_lng) {
-          setLiveLocation({
-            lat: status.live_lat,
-            lng: status.live_lng,
-            source: 'telemetry',
-          });
+        if (status) {
+          if (status.live_lat && status.live_lng) {
+            setLiveLocation({
+              lat: status.live_lat,
+              lng: status.live_lng,
+              source: 'telemetry',
+            });
+          }
+
+          if (status.active_step && status.active_step !== flowState) {
+            setFlowState(status.active_step);
+          }
+
+          if (status.active_trip) {
+            setActiveTripPayload(status.active_trip);
+            if (status.active_trip.return_load_accepted) {
+              setReturnAccepted(true);
+            }
+          }
+
+          if (status.backhaul_offer) {
+            setReturnCandidate(status.backhaul_offer);
+            if (status.backhaul_offer.accepted) {
+              setReturnAccepted(true);
+            }
+          }
         }
       } catch (err) {
-        console.warn('Driver context fetch notice:', err);
+        console.warn('Driver context telemetry sync warning:', err);
       }
     }
-    loadDriverContext();
+
+    syncDriverContext();
+
+    // 5-second polling interval for live driver telemetry & hazard status
+    const pollInterval = setInterval(syncDriverContext, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
   }, []);
 
-  const tripData = tripId || {
-    origin: 'Shillong',
-    destination: 'Guwahati',
-    distance: '102 km',
-    time: '2h 45m',
-    vehicle: 'NW Heavy Freightliner #101',
-    cargo: '2,500 kg',
-    co2: '82.4 kg',
-  };
+  const tripData = useMemo(() => {
+    if (activeTripPayload) {
+      return {
+        origin: activeTripPayload.origin || 'Betkuchi ISBT Freight Terminal',
+        destination: activeTripPayload.destination || 'ICD Amingaon Container Depot',
+        distance: activeTripPayload.distance || '84.5 km',
+        time: activeTripPayload.time || '118 min',
+        vehicle: activeTripPayload.vehicle || 'NW Tata Signa Heavy Diesel #101',
+        cargo: activeTripPayload.cargo || '12,500 kg',
+        co2: activeTripPayload.co2 || '72.4 kg',
+      };
+    }
+    return typeof tripId === 'object' && tripId !== null ? tripId : {
+      origin: 'Betkuchi ISBT Freight Terminal',
+      destination: 'ICD Amingaon Container Depot',
+      distance: '84.5 km',
+      time: '118 min',
+      vehicle: 'NW Tata Signa Heavy Diesel #101',
+      cargo: '12,500 kg',
+      co2: '72.4 kg',
+    };
+  }, [activeTripPayload, tripId]);
 
-  // Distance from registered home base to live GPS
   const distanceFromBaseKm = useMemo(() => {
     if (!registeredBase?.lat || !liveLocation?.lat) return 0;
     return calculateHaversineDistanceKm(
@@ -120,22 +189,21 @@ export default function DriverTripFlow({ tripId, onComplete }) {
     setFlowState('RETURN_LOAD_ALERT_LOADING');
     try {
       const res = await findLoadPoolMatches().catch(() => null);
-      setReturnMatchData(res);
       const matchItem = res?.matches?.[0];
       const candidate = matchItem
         ? {
             match_id: matchItem.id || matchItem.match_id || 'match-rt-01',
-            origin: matchItem.origin_name || tripData.destination || 'Guwahati Hub',
-            destination: matchItem.dest_name || tripData.origin || 'Shillong Logistics Hub',
-            shipment_weight_kg: matchItem.weight_kg || matchItem.shipment_weight_kg || 400,
-            detour_distance_km: matchItem.detour_km || matchItem.detour_distance_km || 6,
+            origin: matchItem.origin_name || tripData.destination,
+            destination: matchItem.dest_name || tripData.origin,
+            shipment_weight_kg: matchItem.weight_kg || 400,
+            detour_distance_km: matchItem.detour_km || 6,
             co2_saved_kg: matchItem.co2_saved_kg || 14.2,
             carrier_b_name: matchItem.carrier_b_name || 'GreenFreight Logistics',
           }
         : {
             match_id: 'match-rt-01',
-            origin: tripData.destination || 'Guwahati Hub',
-            destination: tripData.origin || 'Shillong Logistics Hub',
+            origin: tripData.destination,
+            destination: tripData.origin,
             shipment_weight_kg: 400,
             detour_distance_km: 6,
             co2_saved_kg: 14.2,
@@ -143,34 +211,44 @@ export default function DriverTripFlow({ tripId, onComplete }) {
           };
 
       setReturnCandidate(candidate);
-      setFlowState('RETURN_LOAD_ALERT');
+      await advanceFlowState('RETURN_LOAD_ALERT', 4);
     } catch (err) {
       console.warn('Return load check fallback:', err);
       setReturnCandidate({
         match_id: 'match-rt-01',
-        origin: tripData.destination || 'Guwahati Hub',
-        destination: tripData.origin || 'Shillong Logistics Hub',
+        origin: tripData.destination,
+        destination: tripData.origin,
         shipment_weight_kg: 400,
         detour_distance_km: 6,
         co2_saved_kg: 14.2,
         carrier_b_name: 'GreenFreight Logistics',
       });
-      setFlowState('RETURN_LOAD_ALERT');
+      await advanceFlowState('RETURN_LOAD_ALERT', 4);
     }
   };
 
   const handleAcceptReturn = async () => {
     setIsAccepting(true);
+    setAcceptError(null);
     try {
-      if (returnCandidate?.match_id) {
-        await acceptLoadPoolMatch(returnCandidate.match_id).catch(() => null);
+      const matchId = returnCandidate?.match_id || 'match-rt-01';
+      
+      // Wire 1-click backhaul load acceptance to POST /api/v1/driver/accept-return
+      const res = await acceptDriverReturn({ match_id: matchId });
+      
+      if (res && res.success) {
+        setReturnAccepted(true);
+        if (res.active_trip) {
+          setActiveTripPayload(res.active_trip);
+        }
+        notifyImpactUpdated({ type: 'backhaul_accepted', matchId });
+        await advanceFlowState('RETURN_LOAD_ACCEPTED', 4);
+      } else {
+        throw new Error(res?.message || 'Backhaul acceptance request failed');
       }
-      setReturnAccepted(true);
-      setFlowState('RETURN_LOAD_ACCEPTED');
     } catch (err) {
-      console.warn('Accept return load:', err);
-      setReturnAccepted(true);
-      setFlowState('RETURN_LOAD_ACCEPTED');
+      console.error('Accept return load error:', err);
+      setAcceptError('Failed to accept return load. Please try again.');
     } finally {
       setIsAccepting(false);
     }
@@ -190,14 +268,13 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         </span>
       </div>
 
-      {/* Progress Timeline Nodes */}
       <div className="space-y-4 relative pl-6 border-l-2 border-slate-800 ml-2">
         <div className="relative">
           <span className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-emerald-500 border-4 border-[#121722] shadow-md shadow-emerald-500/50"></span>
           <div>
             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">START / PICK UP</span>
             <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {tripData.origin} Logistics Hub
+              <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {tripData.origin}
             </h4>
           </div>
         </div>
@@ -217,13 +294,12 @@ export default function DriverTripFlow({ tripId, onComplete }) {
           <div>
             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">FINAL DROP OFF</span>
             <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-amber-400" /> {tripData.destination} Commerce Depot
+              <MapPin className="w-3.5 h-3.5 text-amber-400" /> {tripData.destination}
             </h4>
           </div>
         </div>
       </div>
 
-      {/* Manifest Summary */}
       <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 space-y-2.5 text-xs">
         <div className="flex justify-between items-center text-slate-300">
           <span className="text-slate-400 font-medium">Distance</span>
@@ -243,9 +319,15 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         </div>
       </div>
 
+      {stepError && (
+        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center">
+          {stepError}
+        </div>
+      )}
+
       <motion.button
         whileTap={{ scale: 0.97 }}
-        onClick={() => setFlowState('IN_PROGRESS')}
+        onClick={() => advanceFlowState('IN_PROGRESS', 1)}
         className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
       >
         <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
@@ -265,7 +347,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         <h3 className="text-xl font-black text-slate-100 flex items-center justify-center gap-2">
           {tripData.origin} <ChevronRight className="w-5 h-5 text-slate-500" /> {tripData.destination}
         </h3>
-        <p className="text-xs text-slate-400 font-medium mt-1">Live GPS Connected • Road Clear</p>
+        <p className="text-xs text-slate-400 font-medium mt-1">Live Telemetry Synchronized • Saraighat Bridge Pass</p>
       </div>
 
       <div className="bg-[#0B0E14]/80 p-5 rounded-xl border border-slate-800/80 text-left space-y-3">
@@ -280,7 +362,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
             }`}
           >
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Pick up at {tripData.origin} Hub</span>
+            <span>Pick up at {tripData.origin}</span>
           </div>
 
           <div
@@ -293,7 +375,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
             }`}
           >
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Deliver to {tripData.destination} Depot</span>
+            <span>Deliver to {tripData.destination}</span>
           </div>
 
           <div
@@ -304,14 +386,14 @@ export default function DriverTripFlow({ tripId, onComplete }) {
             }`}
           >
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Trip Completed & Checked</span>
+            <span>Trip Completed & Audited</span>
           </div>
         </div>
       </div>
 
       <motion.button
         whileTap={{ scale: 0.97 }}
-        onClick={() => setFlowState(stage === 0 ? 'NEXT_STOP_PICKUP' : 'NEXT_STOP_DELIVERY')}
+        onClick={() => advanceFlowState(stage === 0 ? 'NEXT_STOP_PICKUP' : 'NEXT_STOP_DELIVERY', stage === 0 ? 2 : 3)}
         className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
       >
         <MapPin className="w-4 h-4 text-slate-950" />
@@ -330,7 +412,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
 
       <div>
         <h2 className="text-2xl font-black text-slate-100">
-          {type === 'PICKUP' ? `${tripData.origin} Logistics Hub` : `${tripData.destination} Commerce Depot`}
+          {type === 'PICKUP' ? tripData.origin : tripData.destination}
         </h2>
         <p className="text-xs text-slate-400 font-medium mt-1">Confirmed Stop Location</p>
       </div>
@@ -338,11 +420,11 @@ export default function DriverTripFlow({ tripId, onComplete }) {
       <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 text-left space-y-2.5 text-xs">
         <div className="flex justify-between items-center text-slate-300">
           <span className="text-slate-400 font-medium">Distance Remaining</span>
-          <span className="font-bold text-slate-100 font-mono">{type === 'PICKUP' ? '12 km' : '90 km'}</span>
+          <span className="font-bold text-slate-100 font-mono">{type === 'PICKUP' ? '12 km' : '18 km'}</span>
         </div>
         <div className="flex justify-between items-center text-slate-300">
           <span className="text-slate-400 font-medium">Est. Arrival</span>
-          <span className="font-bold text-amber-300 font-mono">{type === 'PICKUP' ? '25 min' : '2h 20m'}</span>
+          <span className="font-bold text-amber-300 font-mono">{type === 'PICKUP' ? '25 min' : '32 min'}</span>
         </div>
         <div className="flex justify-between items-center text-slate-300">
           <span className="text-slate-400 font-medium">Cargo Manifest</span>
@@ -352,7 +434,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
 
       <motion.button
         whileTap={{ scale: 0.97 }}
-        onClick={() => setFlowState(type === 'PICKUP' ? 'PICKUP_ARRIVED' : 'DELIVERY_ARRIVED')}
+        onClick={() => advanceFlowState(type === 'PICKUP' ? 'PICKUP_ARRIVED' : 'DELIVERY_ARRIVED', 3)}
         className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
       >
         <CheckCircle2 className="w-4 h-4 text-slate-950" />
@@ -361,7 +443,6 @@ export default function DriverTripFlow({ tripId, onComplete }) {
     </div>
   );
 
-  // Stop arrival confirmation for pickup and delivery actions
   const renderArrived = (type) => (
     <div className="bg-[#121722]/90 border-2 border-emerald-500/40 rounded-2xl p-8 text-center space-y-5 shadow-2xl">
       <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
@@ -370,10 +451,9 @@ export default function DriverTripFlow({ tripId, onComplete }) {
 
       <div>
         <h2 className="text-2xl font-black text-emerald-400">STOP ARRIVAL CONFIRMED</h2>
-        <p className="text-xs text-slate-300 mt-1 font-semibold">Location verified via GPS</p>
+        <p className="text-xs text-slate-300 mt-1 font-semibold">Location verified via GPS Telemetry</p>
       </div>
 
-      {/* Non-blocking Soft Location Warning Banner for Ops Quality */}
       {isBaseMismatched && (
         <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-left space-y-1">
           <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
@@ -386,12 +466,11 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         </div>
       )}
 
-      {/* Confirmation Action Button remains fully enabled and clickable */}
       <motion.button
         whileTap={{ scale: 0.97 }}
         onClick={() => {
           if (type === 'PICKUP') {
-            setFlowState('IN_PROGRESS_2');
+            advanceFlowState('IN_PROGRESS_2', 3);
           } else {
             checkReturnLoad();
           }
@@ -404,7 +483,6 @@ export default function DriverTripFlow({ tripId, onComplete }) {
     </div>
   );
 
-  // 1-Click Backhaul Return Load Accept View
   const renderReturnLoadAlert = () => (
     <div className="bg-[#121722]/90 border-2 border-amber-400/60 rounded-2xl p-6 shadow-2xl text-center space-y-5 relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 to-yellow-500"></div>
@@ -442,21 +520,14 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         </div>
       </div>
 
-      {/* Non-blocking Soft Location Warning Banner for Backhaul ops */}
-      {isBaseMismatched && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-left space-y-1">
-          <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
-            <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Ops Base Variance Notice</span>
-          </div>
-          <p className="text-[11px] text-slate-300 leading-snug">
-            Your location doesn't match your registered base (<strong>{registeredBase.city}</strong>) — proceeding anyway.
-          </p>
+      {acceptError && (
+        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center flex items-center justify-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>{acceptError}</span>
         </div>
       )}
 
       <div className="space-y-2 pt-1">
-        {/* 1-Click Backhaul Accept Target — Remains fully clickable */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleAcceptReturn}
@@ -477,7 +548,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={() => setFlowState('RETURN_LOAD_SKIPPED')}
+          onClick={() => advanceFlowState('RETURN_LOAD_SKIPPED', 4)}
           className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-slate-750 text-slate-400 active:text-slate-200 text-xs font-bold border border-slate-800 transition-colors cursor-pointer select-none"
         >
           Skip Return Load
@@ -494,12 +565,14 @@ export default function DriverTripFlow({ tripId, onComplete }) {
 
       <div>
         <h2 className="text-2xl font-black text-emerald-400">RETURN LOAD ASSIGNED</h2>
-        <p className="text-xs text-slate-300 mt-1 font-semibold">Return space booked! 14.2 kg CO₂ saved.</p>
+        <p className="text-xs text-slate-300 mt-1 font-semibold">
+          Return space booked! 14.2 kg CO₂ saved. Payload updated to {tripData.cargo}.
+        </p>
       </div>
 
       <motion.button
         whileTap={{ scale: 0.97 }}
-        onClick={() => setFlowState('RETURN_TRIP_DETAILS')}
+        onClick={() => advanceFlowState('RETURN_TRIP_DETAILS', 4)}
         className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
       >
         <Navigation className="w-4 h-4 text-slate-950" />
@@ -515,7 +588,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
 
       <motion.button
         whileTap={{ scale: 0.97 }}
-        onClick={() => setFlowState('TRIP_COMPLETE')}
+        onClick={() => advanceFlowState('TRIP_COMPLETE', 5)}
         className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
       >
         Finish Trip
@@ -526,7 +599,7 @@ export default function DriverTripFlow({ tripId, onComplete }) {
   const renderReturnTripDetails = () => (
     <div className="bg-[#121722]/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
       <div className="text-center">
-        <h3 className="text-sm font-extrabold uppercase tracking-wider text-emerald-400">RETURN TRIP</h3>
+        <h3 className="text-sm font-extrabold uppercase tracking-wider text-emerald-400">RETURN TRIP IN PROGRESS</h3>
         <h2 className="text-xl font-black text-slate-100 mt-1">
           {tripData.destination} <ChevronRight className="w-4 h-4 inline text-slate-500" /> {tripData.origin}
         </h2>
@@ -534,14 +607,14 @@ export default function DriverTripFlow({ tripId, onComplete }) {
 
       <div className="bg-[#0B0E14]/80 p-4 rounded-xl border border-slate-800/80 space-y-2 text-xs">
         <div className="flex justify-between items-center text-slate-300">
-          <span className="text-slate-400 font-medium">Return Shipment Weight</span>
-          <span className="font-bold text-emerald-400 font-mono">{returnCandidate?.shipment_weight_kg || '400'} kg</span>
+          <span className="text-slate-400 font-medium">Active Payload Weight</span>
+          <span className="font-bold text-emerald-400 font-mono">{tripData.cargo}</span>
         </div>
       </div>
 
       <motion.button
         whileTap={{ scale: 0.97 }}
-        onClick={() => setFlowState('TRIP_COMPLETE')}
+        onClick={() => advanceFlowState('TRIP_COMPLETE', 5)}
         className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
       >
         <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
@@ -585,17 +658,20 @@ export default function DriverTripFlow({ tripId, onComplete }) {
           </h4>
           <div className="flex justify-between items-center text-slate-300">
             <span className="text-slate-400">CO₂ Avoided</span>
-            <span className="font-black text-emerald-400 font-mono">14.2 kg</span>
+            <span className="font-black text-emerald-400 font-mono">{returnAccepted ? '14.2 kg' : '16.2 kg'}</span>
           </div>
           <div className="flex justify-between items-center text-slate-300">
             <span className="text-slate-400">Fuel Saved</span>
-            <span className="font-black text-slate-100 font-mono">3.4 L</span>
+            <span className="font-black text-slate-100 font-mono">5.3 L</span>
           </div>
         </div>
 
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={onComplete}
+          onClick={() => {
+            advanceFlowState('DETAILS', 0);
+            if (onComplete) onComplete();
+          }}
           className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
         >
           <CheckCircle2 className="w-4 h-4 text-slate-950" />

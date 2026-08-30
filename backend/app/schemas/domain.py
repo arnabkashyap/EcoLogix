@@ -41,3 +41,30 @@ class EstimateEmissionsResponse(BaseModel):
     energy_kwh: float
     co2_kg: float
     formula_breakdown: Dict[str, Any]
+
+
+class CompareEVRequest(BaseModel):
+    distance_km: float
+    current_vehicle_type: Optional[str] = "heavy_truck"
+    load_factor: Optional[float] = 0.5
+    congestion_index: Optional[float] = 0.2
+    current_co2_kg: Optional[float] = None
+
+
+class CompareEVResponse(BaseModel):
+    distance_km: float
+    current_vehicle_type: str
+    current_fuel_type: str
+    current_co2_kg: float
+    current_fuel_L: float
+    ev_vehicle_type: str
+    ev_fuel_type: str
+    ev_co2_kg: float
+    ev_energy_kwh: float
+    co2_saved_kg: float
+    co2_reduction_percentage: float
+    fuel_saved_L: float
+    diesel_cost_usd: float
+    ev_electricity_cost_usd: float
+    cost_saved_usd: float
+    formula_breakdown: Dict[str, Any]

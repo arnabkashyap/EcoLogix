@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { api, fetchParetoRoutes } from '../../services/api';
+import { api, fetchParetoRoutes, fetchDriverStatus, updateDriverStatus } from '../../services/api';
 import { Truck, MapPin, Clock, Leaf, ArrowRight, RefreshCw, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
 
 export default function MobileHome({ onStartTrip }) {
   const [loading, setLoading] = useState(true);
   const [tripData, setTripData] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [driverStatus, setDriverStatus] = useState(null);
 
   useEffect(() => {
     async function loadTodayTrip() {
@@ -14,18 +15,21 @@ export default function MobileHome({ onStartTrip }) {
         setLoading(true);
         setErrorMsg(null);
 
-        // Ensure token exists (or login as Company A Northwind by default)
         let token = localStorage.getItem('ecologix_token');
         if (!token) {
           const authData = await api.devLogin('A');
           token = authData.access_token;
         }
 
-        // Fetch real vehicle and shipment IDs for the driver's active tenant
-        const [vehRes, shipRes] = await Promise.all([
+        const [vehRes, shipRes, statusRes] = await Promise.all([
           api.getVehicles().catch(() => ({ vehicles: [] })),
           api.getShipments().catch(() => ({ shipments: [] })),
+          fetchDriverStatus().catch(() => null),
         ]);
+
+        if (statusRes) {
+          setDriverStatus(statusRes);
+        }
 
         const assignedVehicle = vehRes.vehicles?.[0] || { id: 'veh-nw-101', name: 'NW Tata Signa Heavy Diesel #101' };
         const assignedShipments = (shipRes.shipments && shipRes.shipments.length > 0)
@@ -59,6 +63,14 @@ export default function MobileHome({ onStartTrip }) {
     }
     loadTodayTrip();
   }, []);
+
+  const handleStartTripClick = async () => {
+    try {
+      await updateDriverStatus({ active_step: 'DETAILS', step_index: 0 }).catch(() => null);
+    } finally {
+      onStartTrip(tripData);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -158,7 +170,7 @@ export default function MobileHome({ onStartTrip }) {
           {/* Action Button */}
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => onStartTrip(tripData)}
+            onClick={handleStartTripClick}
             className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
           >
             <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />

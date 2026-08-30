@@ -4,12 +4,14 @@ EcoLogix Route Optimizer & Pareto Frontier Generator
 Uses multi-objective Vehicle Routing Problem (VRP) solving with an exact combinatorial solver
 (optimal for ≤9 stops), or a greedy nearest-neighbor heuristic fallback above that.
 Wired directly to the pure shared Emissions Model (`backend/app/core/emissions.py`).
+Live weather data from Open-Meteo is blended into C_ij per leg via `fetch_weather_risk`.
 """
 
 import math
 import itertools
-from typing import List, Dict, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 from backend.app.core.emissions import calculate_segment_emissions, VEHICLE_PROFILES
+from backend.app.core.weather_lookup import fetch_weather_risk
 
 
 # Climate Risk Corridors for Assam & Guwahati Domain (from data-flow-dynamic.md)
@@ -47,21 +49,83 @@ MOCK_CLIMATE_RISK_CORRIDORS = [
 ]
 
 
-def check_climate_risk(from_lat: float, from_lng: float, to_lat: float, to_lng: float) -> Tuple[bool, str, float, float]:
+
+def _weather_boost(flood_risk: str) -> float:
     """
-    Checks if a leg's endpoints or midpoint intersect climate risk corridors.
+    Translates Open-Meteo flood_risk severity into an additive C_ij boost.
+    Applied on top of the static corridor congestion_index so that live rain
+    conditions compound with known bottleneck geography.
+    """
+    return {"low": 0.00, "moderate": 0.05, "high": 0.10}.get(flood_risk, 0.00)
+
+
+def check_climate_risk(
+    from_lat: float,
+    from_lng: float,
+    to_lat: float,
+    to_lng: float,
+    _weather_cache: Optional[Dict] = None,
+) -> Tuple[bool, str, float, float]:
+    """
+    Checks if a leg's endpoints or midpoint intersect climate risk corridors,
+    then blends live Open-Meteo precipitation/wind data into the congestion index.
+
     Returns (climate_risk_flag, climate_risk_note, speed_kmh, congestion_index).
+
+    `_weather_cache` is a request-scoped dict (keyed by rounded midpoint) that callers
+    pass in to deduplicate HTTP calls across multiple legs in a single optimization run.
+    Pass None to always fetch fresh (safe for low-volume callers like matcher.py).
     """
+    mid_lat = (from_lat + to_lat) / 2.0
+    mid_lng = (from_lng + to_lng) / 2.0
+    cache_key = (round(mid_lat, 2), round(mid_lng, 2))
+
+    # --- Static corridor bounding-box check ---
     points = [
         (from_lat, from_lng),
         (to_lat, to_lng),
-        ((from_lat + to_lat) / 2.0, (from_lng + to_lng) / 2.0),
+        (mid_lat, mid_lng),
     ]
+    flagged = False
+    note = ""
+    speed_kmh = 45.0
+    cong = 0.05  # baseline
+
     for corridor in MOCK_CLIMATE_RISK_CORRIDORS:
         for lat, lng in points:
             if (corridor["lat_min"] <= lat <= corridor["lat_max"]) and (corridor["lng_min"] <= lng <= corridor["lng_max"]):
-                return True, corridor["note"], corridor["speed_kmh"], corridor["congestion_index"]
-    return False, "", 45.0, 0.05
+                flagged = True
+                note = corridor["note"]
+                speed_kmh = corridor["speed_kmh"]
+                cong = corridor["congestion_index"]
+                break
+        if flagged:
+            break
+
+    # --- Live weather blend ---
+    # Fetch (or retrieve from cache) Open-Meteo data for this leg's midpoint.
+    # fetch_weather_risk has a graceful fallback (flood_risk: "low") if offline,
+    # so this is safe to call unconditionally — no routing failure risk.
+    if _weather_cache is not None:
+        if cache_key not in _weather_cache:
+            _weather_cache[cache_key] = fetch_weather_risk(mid_lat, mid_lng)
+        wr = _weather_cache[cache_key]
+    else:
+        wr = fetch_weather_risk(mid_lat, mid_lng)
+
+    boost = _weather_boost(wr["flood_risk"])
+    if boost > 0.0:
+        cong = min(1.0, cong + boost)
+        # Mark the leg as flagged even outside static corridors if live weather is elevated
+        flagged = True
+        weather_detail = (
+            f"Live weather: {wr['flood_risk']} flood risk "
+            f"({wr['precipitation_mm']}mm precip, {wr['wind_strength_kmh']} km/h wind)"
+        )
+        note = f"{note} | {weather_detail}" if note else weather_detail
+
+    return flagged, note, speed_kmh, cong
+
 
 
 def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -83,11 +147,14 @@ def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) ->
 
 
 def build_cost_matrices(
-    stops: List[Dict[str, Any]], vehicle_type: str = "heavy_truck"
+    stops: List[Dict[str, Any]],
+    vehicle_type: str = "heavy_truck",
+    _weather_cache: Optional[Dict] = None,
 ) -> Tuple[List[List[float]], List[List[float]], List[List[float]]]:
     """
     Builds (Distance Matrix in km, Time Matrix in min, CO2 Matrix in kg).
-    Uses real Assam speed profiles and corridor congestion indices.
+    Uses real Assam speed profiles and corridor congestion indices, blended
+    with live Open-Meteo weather data via `_weather_cache`.
     """
     n = len(stops)
     dist_matrix = [[0.0] * n for _ in range(n)]
@@ -101,13 +168,14 @@ def build_cost_matrices(
             d_km = haversine_distance_km(
                 stops[i]["lat"], stops[i]["lng"], stops[j]["lat"], stops[j]["lng"]
             )
-            
-            # Check corridor environmental risk & speed adjustments
+
+            # Check corridor environmental risk & speed adjustments (live weather blended in)
             flagged, note, speed_kmh, cong = check_climate_risk(
-                stops[i]["lat"], stops[i]["lng"], stops[j]["lat"], stops[j]["lng"]
+                stops[i]["lat"], stops[i]["lng"], stops[j]["lat"], stops[j]["lng"],
+                _weather_cache=_weather_cache,
             )
-            
-            # If not in a specific bottleneck corridor, apply standard urban/highway speeds
+
+            # If not flagged (no corridor hit, no elevated weather), apply standard urban/highway speeds
             if not flagged:
                 speed_kmh = 35.0 if d_km < 12.0 else 65.0
                 cong = 0.05
@@ -134,10 +202,12 @@ def evaluate_route_sequence(
     sequence: List[int],
     all_stops: List[Dict[str, Any]],
     vehicle_type: str = "heavy_truck",
+    _weather_cache: Optional[Dict] = None,
 ) -> Dict[str, Any]:
     """
     Calculates total distance, time, and CO2 for an ordered sequence of stop indices.
     Emissions are calculated per leg using the exact onboard payload and leg corridor conditions.
+    Pass `_weather_cache` to share the request-scoped weather lookup cache across legs.
     """
     total_dist = 0.0
     total_time = 0.0
@@ -150,10 +220,13 @@ def evaluate_route_sequence(
     for idx in range(len(sequence) - 1):
         u, v = sequence[idx], sequence[idx + 1]
         su, sv = all_stops[u], all_stops[v]
-        
+
         d_km = haversine_distance_km(su["lat"], su["lng"], sv["lat"], sv["lng"])
-        flagged, note, speed_kmh, cong = check_climate_risk(su["lat"], su["lng"], sv["lat"], sv["lng"])
-        
+        flagged, note, speed_kmh, cong = check_climate_risk(
+            su["lat"], su["lng"], sv["lat"], sv["lng"],
+            _weather_cache=_weather_cache,
+        )
+
         if not flagged:
             speed_kmh = 35.0 if d_km < 12.0 else 65.0
             cong = 0.05

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './context/AuthContext';
-import { api } from './services/api';
+import { api, notifyImpactUpdated } from './services/api';
 import { Header } from './components/Header';
 import { NavBar } from './components/NavBar';
 import { MapView } from './components/MapView';
@@ -138,6 +138,7 @@ export default function AdminDashboard() {
         setRouteResult(completedJob.result);
         setParetoPoints(completedJob.result.pareto_points || []);
         fetchImpactSummary();
+        notifyImpactUpdated({ type: 'route_optimized' });
       }
     } catch (err) {
       console.error('Optimization failed:', err);
@@ -675,7 +676,7 @@ export default function AdminDashboard() {
 
             {/* Aggregate Impact Summary */}
             <div id="impact-summary" className="scroll-mt-20 md:scroll-mt-24">
-              <ImpactSummaryPanel impactSummary={impactSummary} />
+              <ImpactSummaryPanel impactSummary={impactSummary} onRefresh={fetchImpactSummary} />
             </div>
           </div>
         </div>

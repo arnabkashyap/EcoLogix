@@ -88,9 +88,22 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  // EV Comparison Scenario (POST /api/v1/emissions/compare-ev)
+  compareEV: (payload) =>
+    apiRequest('/emissions/compare-ev', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
   // Impact Summary
   getImpactSummary: () => apiRequest('/impact/summary'),
 };
+
+export const compareEV = (payload) =>
+  apiRequest('/emissions/compare-ev', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
 /**
  * Cross-Provider Load Pooling Standalone Match Function
@@ -156,6 +169,17 @@ export const updateDriverStatus = (statusPayload) =>
   apiRequest('/driver/status', {
     method: 'POST',
     body: JSON.stringify(statusPayload),
+  });
+
+export const acceptDriverReturn = (payload = {}) =>
+  apiRequest('/driver/accept-return', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const fetchDriverAlerts = () =>
+  apiRequest('/driver/alerts', {
+    method: 'GET',
   });
 
 export const fetchImpactSummary = () => apiRequest('/impact/summary');

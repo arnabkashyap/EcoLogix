@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
-import { api } from '../services/api';
+import { api, notifyImpactUpdated } from '../services/api';
 import {
   Layers, ShieldCheck, RefreshCw, ArrowRight, DollarSign,
   Leaf, Lock, CheckCircle2, Truck, Eye, ChevronUp, AlertTriangle,
@@ -106,6 +106,7 @@ export function LoadPoolPanel({ onMatchTriggered, selectedVehicle, activeRoute }
       if (onMatchTriggered) {
         onMatchTriggered();
       }
+      notifyImpactUpdated({ type: 'load_pool_matched', matchCount: res.matches?.length || 0 });
     } catch (err) {
       console.error('Load pool match error:', err);
       setError(err.message || 'Failed to scan load pooling matches. Please check network connection.');
@@ -120,6 +121,7 @@ export function LoadPoolPanel({ onMatchTriggered, selectedVehicle, activeRoute }
       ...prev,
       [matchId]: true,
     }));
+    notifyImpactUpdated({ type: 'load_pool_proposed', matchId });
   };
 
   return (

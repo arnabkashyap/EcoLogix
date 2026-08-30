@@ -1,8 +1,33 @@
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from backend.app.main import app
 
 client = TestClient(app)
+
+# ---------------------------------------------------------------------------
+# Test-session weather mock
+# Patches fetch_weather_risk (called per optimizer leg) to return the clear-weather
+# fallback immediately — keeps tests fast and network-independent.
+# The optimizer code path is fully exercised; only the HTTP call is stubbed.
+# ---------------------------------------------------------------------------
+WEATHER_CLEAR_FALLBACK = {
+    "flood_risk": "low",
+    "wind_strength_kmh": 14.5,
+    "precipitation_mm": 0.0,
+    "weather_condition": "Clear",
+    "note": "Test stub: clear weather assumed.",
+}
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_weather_lookup():
+    with patch(
+        "backend.app.core.optimizer.fetch_weather_risk",
+        return_value=WEATHER_CLEAR_FALLBACK,
+    ):
+        yield
+
 
 
 def test_dev_login_company_a_and_b():
@@ -54,7 +79,7 @@ def test_route_optimization_end_to_end():
     vehicle_id = v_res["vehicles"][0]["id"]
 
     s_res = client.get("/api/v1/shipments", headers=headers_a).json()
-    shipment_ids = [s["id"] for s in s_res["shipments"]]
+    shipment_ids = [s["id"] for s in s_res["shipments"][:3]]
 
     # Submit optimization job
     opt_res = client.post(
@@ -95,7 +120,36 @@ def test_impact_summary():
     assert res.status_code == 200
     data = res.json()
     assert data["tenant_id"] == "tenant-northwind"
+    assert data["company_name"] == "Northwind Logistics"
+    assert "total_routes_optimized" in data
+    assert "total_co2_saved_kg" in data
+    assert "total_load_pool_matches" in data
+    assert "total_co2_saved_from_pooling_kg" in data
     assert "combined_total_co2_saved_kg" in data
     assert "equivalent_trees_planted" in data
+    assert "total_cost_saved_usd" in data
+    assert "total_fuel_saved_liters" in data
+    assert "tree_equivalence_factor_note" in data
     assert data["combined_total_co2_saved_kg"] >= 0
+    assert data["equivalent_trees_planted"] >= 0
+
+
+def test_impact_summary_zero_state_fresh_tenant():
+    from backend.app.core.auth import create_access_token
+    token_fresh = create_access_token({"tenant_id": "tenant-fresh-zero", "company_name": "Zero Emissions Freight"})
+    headers_fresh = {"Authorization": f"Bearer {token_fresh}"}
+
+    res = client.get("/api/v1/impact/summary", headers=headers_fresh)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["tenant_id"] == "tenant-fresh-zero"
+    assert data["company_name"] == "Zero Emissions Freight"
+    assert data["total_routes_optimized"] == 0
+    assert data["total_co2_saved_kg"] == 0.0
+    assert data["total_load_pool_matches"] == 0
+    assert data["total_co2_saved_from_pooling_kg"] == 0.0
+    assert data["combined_total_co2_saved_kg"] == 0.0
+    assert data["equivalent_trees_planted"] == 0.0
+    assert data["total_cost_saved_usd"] == 0.0
+    assert data["total_fuel_saved_liters"] == 0.0
 

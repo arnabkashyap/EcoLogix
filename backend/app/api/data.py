@@ -24,9 +24,9 @@ def get_fleets(
         "tenant_id": tenant_id,
         "company_name": current_tenant["company_name"],
         "depot": {
-            "city": org.depot_city if org else "NCR Freight Hub, Delhi",
-            "lat": org.depot_lat if org else 28.6139,
-            "lng": org.depot_lng if org else 77.2090,
+            "city": org.depot_city if org else "Betkuchi ISBT Freight Terminal, Guwahati",
+            "lat": org.depot_lat if org else 26.1214,
+            "lng": org.depot_lng if org else 91.7319,
         },
         "fleets": fleets,
     }

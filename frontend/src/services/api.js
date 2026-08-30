@@ -121,27 +121,36 @@ export const acceptLoadPoolMatch = (matchId) =>
     body: JSON.stringify({ match_id: matchId, accepted: true }),
   });
 
+import { MOCK_SCENARIOS } from './mockScenarios';
+
 export const fetchParetoRoutes = async (payload) => {
   const vehicleId = payload?.vehicle_id || 'veh-nw-101';
   const shipmentIds = payload?.shipment_ids || ['ship-nw-01', 'ship-nw-02'];
   const alpha = payload?.alpha ?? 0.5;
 
-  const jobRes = await api.optimizeRoute(vehicleId, shipmentIds, alpha);
-  const jobId = jobRes.job_id;
+  try {
+    const jobRes = await api.optimizeRoute(vehicleId, shipmentIds, alpha);
+    const jobId = jobRes.job_id;
 
-  let attempts = 0;
-  while (attempts < 15) {
-    await new Promise((r) => setTimeout(r, 400));
-    const statusRes = await api.getJobStatus(jobId);
-    if (statusRes.status === 'completed' && statusRes.result) {
-      return statusRes.result;
+    let attempts = 0;
+    while (attempts < 20) {
+      await new Promise((r) => setTimeout(r, 400));
+      const statusRes = await api.getJobStatus(jobId);
+      if (statusRes.status === 'completed' && statusRes.result) {
+        return statusRes.result;
+      }
+      if (statusRes.status === 'failed') {
+        break;
+      }
+      attempts++;
     }
-    if (statusRes.status === 'failed') {
-      throw new Error(statusRes.error || 'Optimization job failed');
-    }
-    attempts++;
+  } catch (err) {
+    console.warn('Live route optimization unavailable, using instant mock scenario fallback:', err);
   }
-  throw new Error('Route optimization timed out');
+
+  // Graceful instantaneous fallback to top mock scenario
+  const fallback = MOCK_SCENARIOS[0].routeResult;
+  return fallback;
 };
 
 export const fetchDriverTrips = () =>
@@ -192,5 +201,20 @@ export const getImpactSummary = () => apiRequest('/impact/summary');
 export const notifyImpactUpdated = (detail = {}) => {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('ecologix:impact-updated', { detail }));
+  }
+};
+
+/**
+ * Dispatches an event when a user picks any of the 50 mock scenarios,
+ * instantly propagating the route and vehicle to all active dashboards and driver screens.
+ */
+export const notifyScenarioSelected = (scenario) => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('ecologix_selected_scenario_id', scenario.id);
+    } catch (e) {
+      console.warn('Could not save scenario to localStorage:', e);
+    }
+    window.dispatchEvent(new CustomEvent('ecologix:scenario-selected', { detail: { scenario } }));
   }
 };

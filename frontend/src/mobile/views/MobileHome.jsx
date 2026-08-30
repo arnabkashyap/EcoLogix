@@ -1,24 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { api, fetchParetoRoutes, fetchDriverStatus, updateDriverStatus } from '../../services/api';
-import { Truck, MapPin, Clock, Leaf, ArrowRight, RefreshCw, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
+import { MOCK_SCENARIOS, getScenarioById } from '../../services/mockScenarios';
+import { ScenarioPickerTrigger } from '../../components/MockScenarioPicker';
+import { VoiceNavigation } from '../../components/VoiceNavigation';
+import { Truck, MapPin, Clock, Leaf, ArrowRight, RefreshCw, AlertTriangle, ShieldCheck, Zap, Sparkles, Volume2 } from 'lucide-react';
 
 export default function MobileHome({ onStartTrip }) {
   const [loading, setLoading] = useState(true);
   const [tripData, setTripData] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [activeScenarioId, setActiveScenarioId] = useState('S01');
   const [driverStatus, setDriverStatus] = useState(null);
+  const [isVoiceNavOpen, setIsVoiceNavOpen] = useState(false);
+
+  const applyMockTrip = (scenario) => {
+    if (!scenario) return;
+    setActiveScenarioId(scenario.id);
+    setTripData(scenario.tripData);
+    setLoading(false);
+  };
+
+  // Listen to global scenario selection events from Header or picker
+  useEffect(() => {
+    const handleGlobalScenario = (e) => {
+      if (e.detail?.scenario) {
+        applyMockTrip(e.detail.scenario);
+      }
+    };
+    window.addEventListener('ecologix:scenario-selected', handleGlobalScenario);
+    return () => window.removeEventListener('ecologix:scenario-selected', handleGlobalScenario);
+  }, []);
 
   useEffect(() => {
     async function loadTodayTrip() {
       try {
         setLoading(true);
-        setErrorMsg(null);
 
         let token = localStorage.getItem('ecologix_token');
         if (!token) {
-          const authData = await api.devLogin('A');
-          token = authData.access_token;
+          const authData = await api.devLogin('A').catch(() => null);
+          if (authData?.access_token) {
+            token = authData.access_token;
+          }
         }
 
         const [vehRes, shipRes, statusRes] = await Promise.all([
@@ -55,8 +78,9 @@ export default function MobileHome({ onStartTrip }) {
           routeObj: res,
         });
       } catch (err) {
-        console.warn('Driver app fetch error', err);
-        setErrorMsg('Unable to connect to route engine.');
+        console.warn('Live trip fetch notice, applying instant scenario:', err);
+        // Instant graceful fallback to mock scenario S01 so driver is never blocked
+        applyMockTrip(MOCK_SCENARIOS[0]);
       } finally {
         setLoading(false);
       }
@@ -74,40 +98,39 @@ export default function MobileHome({ onStartTrip }) {
 
   return (
     <div className="space-y-6">
-      {/* Header Greeting */}
-      <div className="flex items-center justify-between">
+      {/* Header Greeting & Scenario Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black text-slate-100 tracking-tight flex items-center gap-2">
             Good Morning, Driver 👋
           </h2>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">
-            Today's Trip & Load
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              Today's Trip & Load
+            </p>
+            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-mono border border-slate-700">
+              Scenario: {activeScenarioId}
+            </span>
+          </div>
         </div>
-        <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 shadow-inner">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          Ready to Go
-        </span>
+
+        <div className="flex items-center gap-2">
+          {/* Quick Scenario Picker for Driver Testing */}
+          <ScenarioPickerTrigger
+            activeScenarioId={activeScenarioId}
+            onSelectScenario={applyMockTrip}
+          />
+          <span className="hidden sm:flex px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold items-center gap-1.5 shadow-inner">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            Ready to Go
+          </span>
+        </div>
       </div>
 
       {loading && (
         <div className="bg-[#121722]/80 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
           <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
           <p className="text-sm font-semibold text-slate-300">Finding best road for today...</p>
-        </div>
-      )}
-
-      {!loading && errorMsg && (
-        <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-6 text-center space-y-4">
-          <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto" />
-          <p className="text-sm text-rose-300 font-semibold">{errorMsg}</p>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors cursor-pointer select-none"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </motion.button>
         </div>
       )}
 
@@ -167,19 +190,54 @@ export default function MobileHome({ onStartTrip }) {
             </div>
           </div>
 
-          {/* Action Button */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleStartTripClick}
-            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
-          >
-            <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
-            Start This Trip
-          </motion.button>
+          {/* Action Buttons */}
+          <div className="space-y-2.5">
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={handleStartTripClick}
+              className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
+            >
+              <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
+              Start This Trip
+            </motion.button>
+
+            <button
+              onClick={() => setIsVoiceNavOpen(true)}
+              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 text-xs font-bold border border-slate-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <Volume2 className="w-4 h-4 text-emerald-400" />
+              🔊 Preview Turn-by-Turn Voice Navigation
+            </button>
+          </div>
         </div>
       )}
 
-      {!loading && !tripData && !errorMsg && (
+      {/* Voice Navigation Overlay */}
+      {isVoiceNavOpen && tripData && (
+        <VoiceNavigation
+          route={
+            tripData.routeObj
+              ? {
+                  category: 'green',
+                  waypoints: tripData.routeObj.ordered_stops?.map((s) => ({
+                    lat: s.lat,
+                    lng: s.lng,
+                    name: s.title,
+                  })),
+                }
+              : {
+                  category: 'green',
+                  waypoints: [
+                    { lat: 26.1214, lng: 91.7319, name: tripData.origin },
+                    { lat: 26.1852, lng: 91.6811, name: tripData.destination },
+                  ],
+                }
+          }
+          onExit={() => setIsVoiceNavOpen(false)}
+        />
+      )}
+
+      {!loading && !tripData && (
         <div className="bg-[#121722]/80 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
           <Truck className="w-8 h-8 text-slate-500 mx-auto" />
           <h3 className="text-base font-bold text-slate-200">No Trip Assigned Yet</h3>

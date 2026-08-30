@@ -265,9 +265,16 @@ def optimize_route_vrp(
     """
     Solves multi-objective routing for given stops and weighting alpha (0.0=greenest, 1.0=fastest).
     Returns route sequence, baseline route (alpha=1.0), CO2 saved %, and Pareto frontier.
+
+    A request-scoped `weather_cache` dict is threaded through all sub-calls so that
+    Open-Meteo lookups are deduplicated per unique leg-midpoint across the entire
+    optimization run (including the permutation / 2-opt search phase).
     """
     all_stops = [depot] + stops
     n = len(all_stops)
+
+    # Request-scoped cache: keyed by (round(mid_lat, 2), round(mid_lng, 2)) → weather dict
+    weather_cache: Dict = {}
 
     if n <= 1:
         return {
@@ -283,7 +290,9 @@ def optimize_route_vrp(
             "legs": [],
         }
 
-    dist_matrix, time_matrix, co2_matrix = build_cost_matrices(all_stops, vehicle_type)
+    dist_matrix, time_matrix, co2_matrix = build_cost_matrices(
+        all_stops, vehicle_type, _weather_cache=weather_cache
+    )
 
     stop_indices = list(range(1, n))
     alpha_steps = [round(i * 0.1, 1) for i in range(11)]
@@ -296,7 +305,7 @@ def optimize_route_vrp(
         all_evals = []
         for perm in itertools.permutations(stop_indices):
             seq = [0] + list(perm) + [0]
-            metrics = evaluate_route_sequence(seq, all_stops, vehicle_type)
+            metrics = evaluate_route_sequence(seq, all_stops, vehicle_type, _weather_cache=weather_cache)
             all_evals.append((seq, metrics))
 
         # Determine reference bounds for fair normalization across dimensions
@@ -304,7 +313,7 @@ def optimize_route_vrp(
         max_time = max(m["total_time_min"] for _, m in all_evals)
         min_co2 = min(m["total_co2_kg"] for _, m in all_evals)
         max_co2 = max(m["total_co2_kg"] for _, m in all_evals)
-        
+
         t_span = max(1e-3, max_time - min_time)
         c_span = max(1e-3, max_co2 - min_co2)
 
@@ -320,7 +329,7 @@ def optimize_route_vrp(
                     best_score = score
                     best_seq = seq
                     best_metrics = metrics
-            
+
             best_seqs_by_alpha[a] = {
                 "score": best_score,
                 "sequence": best_seq,
@@ -342,7 +351,7 @@ def optimize_route_vrp(
                 unvisited.remove(nxt)
                 curr = nxt
             seq.append(0)
-            
+
             # Simple 2-opt local search improvement
             improved = True
             while improved:
@@ -350,8 +359,8 @@ def optimize_route_vrp(
                 for i in range(1, len(seq) - 2):
                     for j in range(i + 1, len(seq) - 1):
                         new_seq = seq[:i] + seq[i : j + 1][::-1] + seq[j + 1 :]
-                        old_m = evaluate_route_sequence(seq, all_stops, vehicle_type)
-                        new_m = evaluate_route_sequence(new_seq, all_stops, vehicle_type)
+                        old_m = evaluate_route_sequence(seq, all_stops, vehicle_type, _weather_cache=weather_cache)
+                        new_m = evaluate_route_sequence(new_seq, all_stops, vehicle_type, _weather_cache=weather_cache)
                         old_score = a * old_m["total_time_min"] + (1.0 - a) * (old_m["total_co2_kg"] * 1.5)
                         new_score = a * new_m["total_time_min"] + (1.0 - a) * (new_m["total_co2_kg"] * 1.5)
                         if new_score < old_score:
@@ -361,7 +370,7 @@ def optimize_route_vrp(
                     if improved:
                         break
 
-            metrics = evaluate_route_sequence(seq, all_stops, vehicle_type)
+            metrics = evaluate_route_sequence(seq, all_stops, vehicle_type, _weather_cache=weather_cache)
             best_seqs_by_alpha[a] = {"score": 0, "sequence": seq, "metrics": metrics}
 
     # Extract baseline (alpha = 1.0)
@@ -408,7 +417,7 @@ def optimize_route_vrp(
         s = all_stops[idx].copy()
         baseline_stops.append(s)
 
-    # Helper to construct legs for any sequence
+    # Helper to construct legs for any sequence (reuses the request-scoped weather_cache)
     def build_legs_for_seq(seq):
         constructed_legs = []
         current_load = sum(all_stops[idx].get("load_kg", 0.0) for idx in seq if idx != 0)
@@ -418,7 +427,10 @@ def optimize_route_vrp(
             u, v = seq[i], seq[i + 1]
             su, sv = all_stops[u], all_stops[v]
             d = haversine_distance_km(su["lat"], su["lng"], sv["lat"], sv["lng"])
-            is_flagged, risk_note, speed_kmh, cong = check_climate_risk(su["lat"], su["lng"], sv["lat"], sv["lng"])
+            is_flagged, risk_note, speed_kmh, cong = check_climate_risk(
+                su["lat"], su["lng"], sv["lat"], sv["lng"],
+                _weather_cache=weather_cache,
+            )
             if not is_flagged:
                 speed_kmh = 35.0 if d < 12.0 else 65.0
                 cong = 0.05
@@ -478,4 +490,5 @@ def optimize_route_vrp(
         "baseline_legs": baseline_legs,
         "pareto_points": pareto_points,
     }
+
 

@@ -154,3 +154,28 @@ def test_optimizer_pareto_alpha_different_routes():
     assert p_green["co2_kg"] < p_fast["co2_kg"]
     assert p_green["time_min"] > p_fast["time_min"]
     assert p_green["co2_saved_pct"] > 0.0
+
+
+def test_compare_ev_api_endpoint():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+    payload = {
+        "distance_km": 75.0,
+        "current_vehicle_type": "heavy_truck",
+        "load_factor": 0.5,
+        "congestion_index": 0.2,
+    }
+    response = client.post("/api/v1/emissions/compare-ev", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["distance_km"] == 75.0
+    assert data["current_vehicle_type"] == "heavy_truck"
+    assert data["ev_vehicle_type"] == "ev_truck"
+    assert data["current_co2_kg"] > data["ev_co2_kg"]
+    assert data["co2_saved_kg"] > 0
+    assert data["co2_reduction_percentage"] > 70.0
+    assert data["cost_saved_usd"] > 0
+    assert data["formula_breakdown"]["diesel_combustion_factor_kg_per_l"] == 2.68
+

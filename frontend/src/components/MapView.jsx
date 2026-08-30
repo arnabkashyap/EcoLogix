@@ -87,7 +87,6 @@ export function MapView({
 }) {
   const [userLocation, setUserLocation] = useState(null);
   const [recenterCoords, setRecenterCoords] = useState(null);
-  const [isNavigating, setIsNavigating] = useState(false);
   const [routeFitTrigger, setRouteFitTrigger] = useState(0);
 
   // Read active legs from prop directly or fall back to routeResult.legs
@@ -262,31 +261,18 @@ export function MapView({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Top Route Mode Switcher Bar */}
-      {setRouteCategory && (
-        <div className="grid grid-cols-2 gap-2 bg-[#121722] p-1.5 rounded-xl border border-slate-800">
-          <button
-            onClick={() => setRouteCategory('faster')}
-            className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              routeCategory === 'faster'
-                ? 'bg-slate-700 text-slate-100 shadow-md border border-slate-600'
-                : 'bg-[#181E2B] text-slate-400 hover:text-slate-200 hover:bg-[#1E2638]'
-            }`}
-          >
-            Faster Route (Time-Optimized)
-          </button>
-          <button
-            onClick={() => setRouteCategory('greener')}
-            className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              routeCategory === 'greener' || !routeCategory
-                ? 'bg-[#10B981] text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)] font-black'
-                : 'bg-[#181E2B] text-slate-400 hover:text-slate-200 hover:bg-[#1E2638]'
-            }`}
-          >
-            Greener Route (Carbon-Aware)
-          </button>
+      {/* Unified Route Banner Heading */}
+      <div className="flex items-center justify-between bg-[#121722]/90 px-4 py-3 rounded-xl border border-slate-800 shadow-md">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+          <h3 className="text-sm font-black text-slate-100 tracking-wide">
+            Logistic Route (Most Optimal)
+          </h3>
         </div>
-      )}
+        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+          Carbon & Time Balanced
+        </span>
+      </div>
 
       {/* Map Container */}
       <div className="relative w-full h-[500px] rounded-2xl overflow-hidden glass-panel border border-slate-800/80 shadow-2xl">
@@ -299,17 +285,6 @@ export function MapView({
           >
             <Crosshair className="w-4 h-4 text-emerald-400" />
             <span>Recenter on location</span>
-          </button>
-          <button
-            onClick={() => setIsNavigating(!isNavigating)}
-            className={`px-3.5 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
-              isNavigating
-                ? 'bg-rose-500 hover:bg-rose-400 text-slate-950'
-                : 'bg-[#10B981] hover:bg-emerald-400 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-            }`}
-          >
-            <Navigation className="w-4 h-4" />
-            <span>{isNavigating ? 'Stop Navigation' : 'Start Navigation'}</span>
           </button>
         </div>
 

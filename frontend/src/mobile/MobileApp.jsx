@@ -29,7 +29,7 @@ export default function MobileApp({ onExit }) {
       <Header />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6 pb-28">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6 pb-44 sm:pb-48">
         {/* Top Driver Portal Info Banner */}
         <div className="bg-[#121722]/80 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
@@ -71,6 +71,9 @@ export default function MobileApp({ onExit }) {
             onComplete={completeTripFlow}
           />
         )}
+
+        {/* Bottom Spacer to ensure full clearance above fixed floating navigation */}
+        <div className="h-16 w-full pointer-events-none" aria-hidden="true" />
       </main>
 
       {/* Compressed Pill Bottom Navigation */}

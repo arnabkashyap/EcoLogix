@@ -4,7 +4,7 @@ import TripPlanForm from './TripPlanForm';
 export default function MobileTrips({ onStartTrip }) {
   return (
     <div>
-      <TripPlanForm />
+      <TripPlanForm onStartTrip={onStartTrip} />
     </div>
   );
 }

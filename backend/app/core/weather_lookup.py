@@ -17,7 +17,7 @@ def fetch_weather_risk(
     }
 
     try:
-        res = requests.get(url, params=params, timeout=5)
+        res = requests.get(url, params=params, timeout=1.0)
         if res.status_code == 200:
             data = res.json()
             curr = data.get("current", {})

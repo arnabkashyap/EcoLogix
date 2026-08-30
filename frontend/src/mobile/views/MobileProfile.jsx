@@ -394,7 +394,7 @@ export default function MobileProfile({ onExit }) {
         className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-slate-750 text-slate-200 border border-slate-800 text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg select-none"
       >
         <ExternalLink className="w-4 h-4 text-emerald-400" />
-        Go to Admin Panel
+        Go to Consumer Hub
       </motion.button>
     </div>
   );

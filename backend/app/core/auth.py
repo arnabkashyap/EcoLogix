@@ -39,6 +39,15 @@ TENANT_BY_ID = {
 }
 
 
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[int] = None) -> str:
+    """Generates a raw signed JWT string for any given dict payload."""
+    to_encode = data.copy()
+    now = int(time.time())
+    expire = now + (expires_delta if expires_delta else JWT_EXPIRATION_SECONDS)
+    to_encode.update({"iat": now, "exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
 def create_tenant_jwt(company_key: str) -> Dict[str, Any]:
     """Generates a signed JWT for company 'A' or 'B' (or tenant_id directly)."""
     key_upper = company_key.upper() if isinstance(company_key, str) else "A"

@@ -548,6 +548,7 @@ export default function AdminDashboard() {
             {/* Interactive Route Map (Req #4) */}
             <div id="map-view" className="scroll-mt-20 md:scroll-mt-24 relative space-y-4">
               <MapView 
+                legs={activeRouteResult?.legs}
                 routeResult={activeRouteResult} 
                 depot={depot} 
                 routeCategory={routeCategory}
@@ -665,7 +666,11 @@ export default function AdminDashboard() {
 
             {/* Load Pooling Opportunity */}
             <div id="load-pool" className="scroll-mt-20 md:scroll-mt-24">
-              <LoadPoolPanel onMatchTriggered={fetchImpactSummary} />
+              <LoadPoolPanel
+                onMatchTriggered={fetchImpactSummary}
+                selectedVehicle={selectedVehicle}
+                activeRoute={routeResult}
+              />
             </div>
 
             {/* Aggregate Impact Summary */}

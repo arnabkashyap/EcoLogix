@@ -77,6 +77,15 @@ def get_impact_summary(
         combined_total_co2_saved_kg / CO2_KG_PER_TREE_YEAR, 1
     )
 
+    # 4. Financial & Fuel Savings
+    total_cost_saved_usd = round(
+        sum(getattr(m, "cost_saved_usd", 0.0) or 0.0 for m in pool_matches), 2
+    )
+    # GLEC standard diesel factor: 2.68 kg CO2/L
+    total_fuel_saved_liters = round(
+        combined_total_co2_saved_kg / 2.68, 1
+    ) if combined_total_co2_saved_kg > 0 else 0.0
+
     return {
         "tenant_id": tenant_id,
         "company_name": current_tenant["company_name"],
@@ -86,5 +95,8 @@ def get_impact_summary(
         "total_co2_saved_from_pooling_kg": total_co2_saved_from_pooling_kg,
         "combined_total_co2_saved_kg": combined_total_co2_saved_kg,
         "equivalent_trees_planted": equivalent_trees_planted,
+        "total_cost_saved_usd": total_cost_saved_usd,
+        "total_fuel_saved_liters": total_fuel_saved_liters,
         "tree_equivalence_factor_note": f"Based on {CO2_KG_PER_TREE_YEAR} kg CO₂ absorbed per tree per year (US EPA standard estimate).",
     }
+

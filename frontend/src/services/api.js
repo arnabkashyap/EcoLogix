@@ -73,11 +73,12 @@ export const api = {
   getParetoCurve: (vehicleId, shipmentIds) =>
     apiRequest(`/routes/pareto?vehicle_id=${vehicleId}&shipment_ids=${shipmentIds.join(',')}`),
 
-  // Load Pooling
-  matchLoadPool: () =>
+  // Cross-Provider Load Pooling Matcher (POST /api/v1/loadpool/match)
+  // Identifies bipartite deadhead return matching opportunities across carrier networks
+  matchLoadPool: (payload = {}) =>
     apiRequest('/loadpool/match', {
       method: 'POST',
-      body: JSON.stringify({}),
+      body: JSON.stringify(typeof payload === 'object' ? payload : {}),
     }),
 
   // Emissions Calculator
@@ -91,7 +92,11 @@ export const api = {
   getImpactSummary: () => apiRequest('/impact/summary'),
 };
 
-export const findLoadPoolMatches = (payload) =>
+/**
+ * Cross-Provider Load Pooling Standalone Match Function
+ * Calls POST /api/v1/loadpool/match with verified tenant JWT.
+ */
+export const findLoadPoolMatches = (payload = {}) =>
   apiRequest('/loadpool/match', {
     method: 'POST',
     body: JSON.stringify(typeof payload === 'object' ? payload : {}),
@@ -152,3 +157,16 @@ export const updateDriverStatus = (statusPayload) =>
     method: 'POST',
     body: JSON.stringify(statusPayload),
   });
+
+export const fetchImpactSummary = () => apiRequest('/impact/summary');
+export const getImpactSummary = () => apiRequest('/impact/summary');
+
+/**
+ * Dispatches an event across the window so components like ImpactSummaryPanel
+ * can refresh live data immediately without page reload or polling.
+ */
+export const notifyImpactUpdated = (detail = {}) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ecologix:impact-updated', { detail }));
+  }
+};
